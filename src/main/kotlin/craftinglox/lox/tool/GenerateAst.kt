@@ -2,6 +2,7 @@ package craftinglox.lox.tool
 
 import kotlin.system.exitProcess
 import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import craftinglox.lox.Lox.PACKAGE_NAME
 import java.nio.file.Paths
 
@@ -17,9 +18,10 @@ typealias Types = Map<TypeName, TypeFields>
 object GenerateAst {
 
     const val packageName = "${PACKAGE_NAME}.expr"
+    const val BASE_NAME = "Expr"
 
     val Token = ClassName(PACKAGE_NAME, "Token")
-    val Expr = ClassName(packageName, "Expr")
+    val Expr = ClassName(packageName, BASE_NAME)
 
     val TYPES = mapOf(
         "Binary" to listOf(
@@ -39,6 +41,11 @@ object GenerateAst {
         )
     )
 
+    val visiteeType = TypeVariableName("R")
+    val visitorType = ClassName("$packageName.$BASE_NAME", "Visitor").run {
+        parameterizedBy(visiteeType)
+    }
+
     @JvmStatic
     fun main(args: Array<String>) {
         when {
@@ -51,7 +58,7 @@ object GenerateAst {
 
                 defineAst(
                     packageName,
-                    "Expr",
+                    BASE_NAME,
                     TYPES,
                     outputDir,
                 )
@@ -59,9 +66,8 @@ object GenerateAst {
         }
     }
 
-
     fun defineAst(packageName: String, baseName: String, types: Types, outputDir: String) {
-        val base = TypeSpec.interfaceBuilder(baseName).build()
+        val base = buildBase(baseName, types)
         val file = FileSpec.builder(packageName, baseName).run {
             addType(base)
 
@@ -77,6 +83,55 @@ object GenerateAst {
         file.writeTo(Paths.get(outputDir))
     }
 
+    fun buildBase(baseName: String, types: Types): TypeSpec {
+
+        val visitor = TypeSpec.interfaceBuilder("Visitor").run {
+            addTypeVariable(visiteeType)
+
+            addFunctions(
+                types.map { (typeName, _) ->
+                    FunSpec.builder("visit$typeName$baseName").run {
+                        addModifiers(KModifier.ABSTRACT)
+
+                        addParameter(
+                            ParameterSpec.builder(baseName.toLowerCase(), ClassName(packageName, typeName)).build()
+                        )
+                        returns(visiteeType)
+
+                        build()
+                    }
+                }
+            )
+
+            build()
+        }
+
+        return TypeSpec.classBuilder(baseName).run {
+            addModifiers(KModifier.ABSTRACT)
+
+            addType(visitor)
+
+            addFunction(
+                FunSpec.builder("accept").run {
+                    addModifiers(KModifier.ABSTRACT)
+                    addTypeVariable(visiteeType)
+
+                    addParameter(
+                        ParameterSpec.builder(
+                            "visitor",
+                            visitorType
+                        ).build()
+                    )
+                    returns(visiteeType)
+
+                    build()
+                }
+            )
+
+            build()
+        }
+    }
+
     fun buildAstType(superName: String, typeName: String, typeFields: TypeFields): TypeSpec =
         TypeSpec.classBuilder(typeName).run {
             addModifiers(KModifier.DATA)
@@ -88,7 +143,7 @@ object GenerateAst {
                             ParameterSpec.builder(fieldName, fieldType).build()
                         }
                     )
-                    addSuperinterface(ClassName("", superName))
+                    superclass(ClassName("", superName))
                     build()
                 }
             )
@@ -99,6 +154,27 @@ object GenerateAst {
                         initializer(fieldName)
                         build()
                     }
+                }
+            )
+
+            addFunction(
+                FunSpec.builder("accept").run {
+                    addModifiers(KModifier.OVERRIDE)
+                    addTypeVariable(visiteeType)
+
+                    addParameter(
+                        ParameterSpec.builder(
+                            "visitor",
+                            visitorType
+                        ).run {
+                            addStatement("return visitor.visit${typeName}${superName}(this)")
+
+                            build()
+                        }
+                    )
+                    returns(visiteeType)
+
+                    build()
                 }
             )
 

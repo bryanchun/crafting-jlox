@@ -4,6 +4,8 @@ import kotlin.system.exitProcess
 
 object Lox {
 
+    const val PACKAGE_NAME = "craftinglox.lox"
+
     @JvmStatic
     fun main(args: Array<String>) {
         when {

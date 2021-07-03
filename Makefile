@@ -6,4 +6,8 @@ lox: build
 	@ # make lox f=path/to/file	# source mode
 	@ java -jar ./build/libs/crafting-lox-1.0-SNAPSHOT.jar $(f)
 
-.PHONY: build lox
+gen-ast:
+	@ rm -f src/main/kotlin/craftinglox/lox/expr/* || true
+	@ gradle tool-gen-ast --args='src/main/kotlin'
+
+.PHONY: build lox gen-ast

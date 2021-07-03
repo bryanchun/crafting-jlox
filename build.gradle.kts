@@ -13,6 +13,7 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
+    implementation("com.squareup:kotlinpoet:1.9.0")
 
     testImplementation(kotlin("test-junit5"))
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
@@ -29,6 +30,11 @@ tasks.withType<KotlinCompile>() {
 
 tasks.create<JavaExec>("lox") {
     main = "${project.group}.Lox"
+    classpath += sourceSets["main"].runtimeClasspath
+}
+
+tasks.create<JavaExec>("tool-gen-ast") {
+    main = "${project.group}.tool.GenerateAst"
     classpath += sourceSets["main"].runtimeClasspath
 }
 

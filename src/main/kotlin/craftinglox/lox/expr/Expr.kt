@@ -34,7 +34,7 @@ public data class Grouping(
 }
 
 public data class Literal(
-  public val `value`: Any
+  public val `value`: Any?
 ) : Expr() {
   public override fun <R> accept(visitor: craftinglox.lox.expr.Expr.Visitor<R>): R =
       visitor.visitLiteralExpr(this)

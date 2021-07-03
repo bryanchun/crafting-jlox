@@ -7,13 +7,9 @@ import craftinglox.lox.Lox.PACKAGE_NAME
 import java.nio.file.Paths
 
 
-typealias FieldName = String
-typealias FieldType = ClassName
-typealias Field = Pair<FieldName, FieldType>
-
-typealias TypeName = String
-typealias TypeFields = List<Field>
-typealias Types = Map<TypeName, TypeFields>
+typealias TypeField = Pair<String, ClassName>
+typealias TypeFields = List<TypeField>
+typealias Types = Map<String, TypeFields>
 
 object GenerateAst {
 
@@ -33,7 +29,7 @@ object GenerateAst {
             "expression" to Expr,
         ),
         "Literal" to listOf(
-            "value" to ANY,
+            "value" to ANY.copy(nullable = true, annotations = ANY.annotations, tags = ANY.tags),
         ),
         "Unary" to listOf(
             "operator" to Token,

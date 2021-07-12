@@ -4,7 +4,7 @@ import craftinglox.lox.expr.*
 
 class PrettyPrinter: Expr.Visitor<String> {
 
-    fun print(expr: Expr) = expr.accept(this)
+    fun print(expr: Expr?) = expr?.accept(this)
 
     private fun parenthesize(name: String, vararg exprs: Expr): String {
         // prefix printing for now

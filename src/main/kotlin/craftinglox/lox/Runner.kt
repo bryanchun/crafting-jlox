@@ -20,11 +20,14 @@ abstract class Runner {
     protected fun runLox(source: String) {
         val scanner = Scanner(source = source, onError = ::error)
         val tokens = scanner.scanTokens()
+        val parser = Parser(tokens = tokens, onError = ::error)
+        val expression = parser.parse()
 
-        // For now
-        for (token in tokens) {
-            println(token)
+        if (hasErrors) {
+            return
         }
+
+        println(PrettyPrinter().print(expression))
     }
 
     private fun error(line: Int, message: String) {
@@ -34,6 +37,13 @@ abstract class Runner {
     private fun report(line: Int, where: String, message: String) {
         System.err.println("[line $line] Error$where: $message")
         hasErrors = true
+    }
+
+    private fun error(token: Token, message: String) {
+        when (token.type) {
+            TokenType.EOF -> report(token.line, " at end", message)
+            else -> report(token.line, " at '${token.lexeme}'", message)
+        }
     }
 }
 

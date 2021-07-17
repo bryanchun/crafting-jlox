@@ -8,7 +8,12 @@ import kotlin.system.exitProcess
 
 abstract class Runner {
 
-    protected var hasErrors = false
+    // Compilation errors?
+    protected var hasError = false
+
+    protected var hasRuntimeError = false
+
+    private val interpreter = Interpreter(onRuntimeError = ::runtimeError)
 
     /**
      * Handles IO of running a program in a particular way.
@@ -23,11 +28,13 @@ abstract class Runner {
         val parser = Parser(tokens = tokens, onError = ::error)
         val expression = parser.parse()
 
-        if (hasErrors) {
+        if (hasError) {
             return
         }
 
-        println(PrettyPrinter().print(expression))
+        expression?.let { interpreter.interpret(it) }
+
+        // println(PrettyPrinter().print(expression))
     }
 
     private fun error(line: Int, message: String) {
@@ -36,7 +43,7 @@ abstract class Runner {
 
     private fun report(line: Int, where: String, message: String) {
         System.err.println("[line $line] Error$where: $message")
-        hasErrors = true
+        hasError = true
     }
 
     private fun error(token: Token, message: String) {
@@ -45,14 +52,22 @@ abstract class Runner {
             else -> report(token.line, " at '${token.lexeme}'", message)
         }
     }
+
+    private fun runtimeError(error: Interpreter.RuntimeError) {
+        System.err.println("${error.message}\n[line ${error.token.line}]")
+        hasRuntimeError = true
+    }
 }
 
 class FileRunner(private val path: String) : Runner() {
     override fun run() {
         val program = File(path).readText(Charset.defaultCharset())
         runLox(program)
-        if (hasErrors) {
+        if (hasError) {
             exitProcess(65)         // EX_DATAERR
+        }
+        if (hasRuntimeError) {
+            exitProcess(70)
         }
     }
 }
@@ -67,7 +82,7 @@ class PromptRunner : Runner() {
             val line = reader.readLine()
             line?.let {
                 runLox(it)
-                hasErrors = false
+                hasError = false
             } ?: break
         }
     }

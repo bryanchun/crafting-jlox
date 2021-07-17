@@ -164,16 +164,6 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
     private fun previous(): Token = tokens[current - 1]
 
     /**
-     * Error
-     */
-    class ParseError: RuntimeException()
-
-    private fun error(token: Token, message: String): ParseError {
-        onError(token, message)
-        return ParseError()
-    }
-
-    /**
      * Synchronization: discard invalid tokens such that the parser can resume on another production
      * Until it thinks* it hits a statement boundary
      */
@@ -191,5 +181,15 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
         }
 
         advance()
+    }
+
+    /**
+     * Error
+     */
+    class ParseError: RuntimeException()
+
+    private fun error(token: Token, message: String): ParseError {
+        onError(token, message)
+        return ParseError()
     }
 }

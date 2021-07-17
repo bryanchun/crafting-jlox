@@ -1,23 +1,29 @@
 package craftinglox.lox
 
-import craftinglox.lox.ast.Binary
-import craftinglox.lox.ast.Expr
-import craftinglox.lox.ast.Grouping
-import craftinglox.lox.ast.Literal
-import craftinglox.lox.ast.Unary
+import craftinglox.lox.ast.*
 import java.lang.Exception
 import java.lang.RuntimeException
+import kotlin.math.exp
 
 class Parser(private val tokens: List<Token>, private val onError: (Token, String) -> Unit) {
 
     // Public API
-    fun parse(): Expr? =
-        try {
-            expression()
-        } catch (e: ParseError) {
-            // Syntax error recovery
-            null
-        }
+//    fun parse(): Expr? =
+//        try {
+//            expression()
+//        } catch (e: ParseError) {
+//            // Syntax error recovery
+//            null
+//        }
+    fun parse(): List<Stmt> {
+       val statements = mutableListOf<Stmt>()
+
+       while (!isAtEnd()) {
+           statements.add(statement())
+       }
+
+       return statements
+    }
 
     // Recursive descent!
     // i.e. top-down parsing from root/most encompassing rule, and recursive parsing corresponds
@@ -31,6 +37,24 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
     // In ascending order of precedence
 
     private fun expression(): Expr = equality()
+
+    private fun statement(): Stmt =
+        when {
+            match(TokenType.PRINT) -> printStatement()
+            else -> expressionStatement()
+        }
+
+    private fun printStatement(): Stmt {
+        val value = expression()
+        consume(TokenType.SEMICOLON, "Expect ';' after value.")
+        return Print(value)
+    }
+
+    private fun expressionStatement(): Stmt {
+        val expr = expression()
+        consume(TokenType.SEMICOLON, "Expect ';' after expression")
+        return Expression(expr)
+    }
 
     private fun equality(): Expr {
         var expr = comparison()

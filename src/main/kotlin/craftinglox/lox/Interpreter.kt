@@ -5,14 +5,16 @@ import java.lang.RuntimeException
 
 // We need a superclass of any class to represent what could be the result
 // of any interpretation, hence Interpreter is a visitor that returns Any?
-class Interpreter(private val onRuntimeError: (RuntimeError) -> Unit): Expr.Visitor<Any?> {
+class Interpreter(
+    private val onRuntimeError: (RuntimeError) -> Unit
+): Expr.Visitor<Any?>, Stmt.Visitor<Unit?> {
 
     // Public API
-    fun interpret(expr: Expr) {
+    fun interpret(statements: List<Stmt>) {
         try {
-            // For now, interpreter == an expression evaluator
-            val value = evaluate(expr)
-            println(stringify(value))
+            for (statement in statements) {
+                execute(statement)
+            }
         } catch (error: RuntimeError) {
             onRuntimeError(error)
         }
@@ -20,6 +22,9 @@ class Interpreter(private val onRuntimeError: (RuntimeError) -> Unit): Expr.Visi
 
     // Evaluate a sub-expression
     private fun evaluate(expr: Expr): Any? = expr.accept(this)
+
+    // Run a statement
+    private fun execute(stmt: Stmt) = stmt.accept(this)
 
     // Partition the universe of values into either truthy and falsey
     // Lox follows Ruby's truthiness rule
@@ -125,6 +130,17 @@ class Interpreter(private val onRuntimeError: (RuntimeError) -> Unit): Expr.Visi
                 ?: throwDoubleOperandError(expr.operator)
             else -> null
         }
+    }
+
+    override fun visitExpressionStmt(stmt: Expression): Unit? {
+        evaluate(stmt.expression)
+        return null
+    }
+
+    override fun visitPrintStmt(stmt: Print): Unit? {
+        val value = evaluate(stmt.expression)
+        println(stringify(value))
+        return null
     }
 
     /**

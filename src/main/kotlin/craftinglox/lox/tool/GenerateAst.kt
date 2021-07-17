@@ -13,34 +13,10 @@ typealias Types = Map<String, TypeFields>
 
 object GenerateAst {
 
-    const val packageName = "${PACKAGE_NAME}.expr"
-    const val BASE_NAME = "Expr"
+    private val Token = ClassName(PACKAGE_NAME, "Token")
+    private val Expr = ClassName("${PACKAGE_NAME}.ast", "Expr")
 
-    val Token = ClassName(PACKAGE_NAME, "Token")
-    val Expr = ClassName(packageName, BASE_NAME)
-
-    val TYPES = mapOf(
-        "Binary" to listOf(
-            "left" to Expr,
-            "operator" to Token,
-            "right" to Expr,
-        ),
-        "Grouping" to listOf(
-            "expression" to Expr,
-        ),
-        "Literal" to listOf(
-            "value" to ANY.copy(nullable = true, annotations = ANY.annotations, tags = ANY.tags),
-        ),
-        "Unary" to listOf(
-            "operator" to Token,
-            "right" to Expr,
-        )
-    )
-
-    val visiteeType = TypeVariableName("R")
-    val visitorType = ClassName("$packageName.$BASE_NAME", "Visitor").run {
-        parameterizedBy(visiteeType)
-    }
+    private val VisiteeType = TypeVariableName("R")
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -53,23 +29,53 @@ object GenerateAst {
                 val outputDir = args[0]
 
                 defineAst(
-                    packageName,
-                    BASE_NAME,
-                    TYPES,
                     outputDir,
+                    packageName = "$PACKAGE_NAME.ast",
+                    baseName = "Expr",
+                    types = mapOf(
+                        "Binary" to listOf(
+                            "left" to Expr,
+                            "operator" to Token,
+                            "right" to Expr,
+                        ),
+                        "Grouping" to listOf(
+                            "expression" to Expr,
+                        ),
+                        "Literal" to listOf(
+                            "value" to ANY.copy(nullable = true, annotations = ANY.annotations, tags = ANY.tags),
+                        ),
+                        "Unary" to listOf(
+                            "operator" to Token,
+                            "right" to Expr,
+                        ),
+                    ),
+                )
+
+                defineAst(
+                    outputDir,
+                    packageName = "$PACKAGE_NAME.ast",
+                    baseName = "Stmt",
+                    types = mapOf(
+                        "Expression" to listOf(
+                            "expression" to Expr,
+                        ),
+                        "Print" to listOf(
+                            "expression" to Expr,
+                        ),
+                    ),
                 )
             }
         }
     }
 
-    fun defineAst(packageName: String, baseName: String, types: Types, outputDir: String) {
-        val base = buildBase(baseName, types)
+    private fun defineAst(outputDir: String, packageName: String, baseName: String, types: Types) {
+        val base = buildBase(packageName, baseName, types)
         val file = FileSpec.builder(packageName, baseName).run {
             addType(base)
 
             types.forEach { (typeName, typeField) ->
                 addType(
-                    buildAstType(baseName, typeName, typeField)
+                    buildAstType(packageName, baseName, typeName, typeField)
                 )
             }
 
@@ -79,10 +85,10 @@ object GenerateAst {
         file.writeTo(Paths.get(outputDir))
     }
 
-    fun buildBase(baseName: String, types: Types): TypeSpec {
+    private fun buildBase(packageName: String, baseName: String, types: Types): TypeSpec {
 
         val visitor = TypeSpec.interfaceBuilder("Visitor").run {
-            addTypeVariable(visiteeType)
+            addTypeVariable(VisiteeType)
 
             addFunctions(
                 types.map { (typeName, _) ->
@@ -92,7 +98,7 @@ object GenerateAst {
                         addParameter(
                             ParameterSpec.builder(baseName.toLowerCase(), ClassName(packageName, typeName)).build()
                         )
-                        returns(visiteeType)
+                        returns(VisiteeType)
 
                         build()
                     }
@@ -100,6 +106,10 @@ object GenerateAst {
             )
 
             build()
+        }
+
+        val visitorType = ClassName("$packageName.$baseName", "Visitor").run {
+            parameterizedBy(VisiteeType)
         }
 
         return TypeSpec.classBuilder(baseName).run {
@@ -110,7 +120,7 @@ object GenerateAst {
             addFunction(
                 FunSpec.builder("accept").run {
                     addModifiers(KModifier.ABSTRACT)
-                    addTypeVariable(visiteeType)
+                    addTypeVariable(VisiteeType)
 
                     addParameter(
                         ParameterSpec.builder(
@@ -118,7 +128,7 @@ object GenerateAst {
                             visitorType
                         ).build()
                     )
-                    returns(visiteeType)
+                    returns(VisiteeType)
 
                     build()
                 }
@@ -128,7 +138,7 @@ object GenerateAst {
         }
     }
 
-    fun buildAstType(superName: String, typeName: String, typeFields: TypeFields): TypeSpec =
+    private fun buildAstType(packageName: String, superName: String, typeName: String, typeFields: TypeFields): TypeSpec =
         TypeSpec.classBuilder(typeName).run {
             addModifiers(KModifier.DATA)
 
@@ -139,7 +149,7 @@ object GenerateAst {
                             ParameterSpec.builder(fieldName, fieldType).build()
                         }
                     )
-                    superclass(ClassName("", superName))
+                    superclass(ClassName(packageName, superName))
                     build()
                 }
             )
@@ -153,10 +163,14 @@ object GenerateAst {
                 }
             )
 
+            val visitorType = ClassName("$packageName.$superName", "Visitor").run {
+                parameterizedBy(VisiteeType)
+            }
+
             addFunction(
                 FunSpec.builder("accept").run {
                     addModifiers(KModifier.OVERRIDE)
-                    addTypeVariable(visiteeType)
+                    addTypeVariable(VisiteeType)
 
                     addParameter(
                         ParameterSpec.builder(
@@ -168,7 +182,7 @@ object GenerateAst {
                             build()
                         }
                     )
-                    returns(visiteeType)
+                    returns(VisiteeType)
 
                     build()
                 }

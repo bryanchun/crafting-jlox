@@ -1,10 +1,10 @@
 package craftinglox.lox
 
-import craftinglox.lox.expr.Binary
-import craftinglox.lox.expr.Expr
-import craftinglox.lox.expr.Grouping
-import craftinglox.lox.expr.Literal
-import craftinglox.lox.expr.Unary
+import craftinglox.lox.ast.Binary
+import craftinglox.lox.ast.Expr
+import craftinglox.lox.ast.Grouping
+import craftinglox.lox.ast.Literal
+import craftinglox.lox.ast.Unary
 import java.lang.Exception
 import java.lang.RuntimeException
 

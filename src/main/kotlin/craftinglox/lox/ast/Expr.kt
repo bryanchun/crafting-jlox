@@ -1,4 +1,4 @@
-package craftinglox.lox.expr
+package craftinglox.lox.ast
 
 import craftinglox.lox.Token
 import kotlin.Any
@@ -22,21 +22,21 @@ public data class Binary(
   public val `operator`: Token,
   public val right: Expr
 ) : Expr() {
-  public override fun <R> accept(visitor: craftinglox.lox.expr.Expr.Visitor<R>): R =
+  public override fun <R> accept(visitor: craftinglox.lox.ast.Expr.Visitor<R>): R =
       visitor.visitBinaryExpr(this)
 }
 
 public data class Grouping(
   public val expression: Expr
 ) : Expr() {
-  public override fun <R> accept(visitor: craftinglox.lox.expr.Expr.Visitor<R>): R =
+  public override fun <R> accept(visitor: craftinglox.lox.ast.Expr.Visitor<R>): R =
       visitor.visitGroupingExpr(this)
 }
 
 public data class Literal(
   public val `value`: Any?
 ) : Expr() {
-  public override fun <R> accept(visitor: craftinglox.lox.expr.Expr.Visitor<R>): R =
+  public override fun <R> accept(visitor: craftinglox.lox.ast.Expr.Visitor<R>): R =
       visitor.visitLiteralExpr(this)
 }
 
@@ -44,6 +44,6 @@ public data class Unary(
   public val `operator`: Token,
   public val right: Expr
 ) : Expr() {
-  public override fun <R> accept(visitor: craftinglox.lox.expr.Expr.Visitor<R>): R =
+  public override fun <R> accept(visitor: craftinglox.lox.ast.Expr.Visitor<R>): R =
       visitor.visitUnaryExpr(this)
 }

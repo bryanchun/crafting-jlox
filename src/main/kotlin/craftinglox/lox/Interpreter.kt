@@ -1,6 +1,6 @@
 package craftinglox.lox
 
-import craftinglox.lox.expr.*
+import craftinglox.lox.ast.*
 import java.lang.RuntimeException
 
 // We need a superclass of any class to represent what could be the result

@@ -1,6 +1,6 @@
 package craftinglox.lox
 
-import craftinglox.lox.expr.*
+import craftinglox.lox.ast.*
 
 class PrettyPrinter: Expr.Visitor<String> {
 

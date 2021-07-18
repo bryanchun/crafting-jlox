@@ -7,7 +7,7 @@ import craftinglox.lox.Lox.PACKAGE_NAME
 import java.nio.file.Paths
 
 
-typealias TypeField = Pair<String, ClassName>
+typealias TypeField = Pair<String, TypeName>
 typealias TypeFields = List<TypeField>
 typealias Types = Map<String, TypeFields>
 
@@ -15,6 +15,7 @@ object GenerateAst {
 
     private val Token = ClassName(PACKAGE_NAME, "Token")
     private val Expr = ClassName("${PACKAGE_NAME}.ast", "Expr")
+    private val Stmt = ClassName("${PACKAGE_NAME}.ast", "Stmt")
 
     private val VisiteeType = TypeVariableName("R")
 
@@ -65,6 +66,9 @@ object GenerateAst {
                     packageName = "$PACKAGE_NAME.ast",
                     baseName = "Stmt",
                     types = mapOf(
+                        "Block" to listOf(
+                            "statements" to LIST.parameterizedBy(Stmt),
+                        ),
                         "Expression" to listOf(
                             "expression" to Expr,
                         ),

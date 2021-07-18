@@ -46,6 +46,7 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
     private fun statement(): Stmt =
         when {
             match(TokenType.PRINT) -> printStatement()
+            match(TokenType.LEFT_BRACE) -> Block(block())
             else -> expressionStatement()
         }
 
@@ -97,6 +98,19 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
             }
             else -> expr
         }
+    }
+
+    private fun block(): List<Stmt> {
+        val statements = mutableListOf<Stmt>()
+
+        // Check is not end of source because even when parsing invalid code, anytime without '}' terminating
+        // we can run into the trouble of an infinite parsing loop (declaration -> statement -> block -> declaration)
+        while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
+            declaration()?.let { statements.add(it) }
+        }
+
+        consume(TokenType.RIGHT_BRACE, "Expect '}' after block.")
+        return statements
     }
 
     private fun equality(): Expr {

@@ -1,6 +1,12 @@
 package craftinglox.lox
 
-class Environment {
+// Make interpreter remember things (a side effect) and do things referencing the memory (also side effect?)
+class Environment(
+    // Parent environment
+    val enclosing: Environment?
+) {
+    // For global environment, as the "end of the chain"
+    constructor(): this(null)
 
     // Public API
     fun define(name: String, value: Any?) {
@@ -13,6 +19,8 @@ class Environment {
         val varName = name.lexeme
         return when {
             values.containsKey(varName) -> values[varName]
+            // Walk the environment chain, ask the parent environment for the variable; recursively
+            enclosing != null -> enclosing.get(name)
             // Semantics choice: Syntax vs Runtime error (don't use default null value please)
             // - Referring to a variable without necessarily evaluating it (e.g. in function body)
             //   probably should not cause it to statically fail (cannot compile),
@@ -27,6 +35,10 @@ class Environment {
         when {
             values.containsKey(varName) -> {
                 values[varName] = value
+            }
+            // Assign to the parent environment if any; recursively
+            enclosing != null -> {
+                enclosing.assign(name, value)
             }
             // Restricted API to not allow creating new variables
             else -> {

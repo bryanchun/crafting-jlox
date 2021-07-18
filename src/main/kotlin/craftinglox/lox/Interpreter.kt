@@ -20,13 +20,27 @@ class Interpreter(
     }
 
     // An interpreter has an in-memory environment for its lifetime
-    private val environment = Environment()
+    private var environment = Environment()
 
     // Evaluate a sub-expression
     private fun evaluate(expr: Expr): Any? = expr.accept(this)
 
     // Run a statement
     private fun execute(stmt: Stmt) = stmt.accept(this)
+
+    // Run a block (nesting, shadowing, lexical scoping)
+    private fun executeBlock(stmts: List<Stmt>, environment: Environment) {
+        // The interpreter is using a different passed-in environment each time it executes a block
+        // Remember to clean up and restore the environment before the passed-in
+        val before = this.environment
+
+        try {
+            this.environment = environment
+            stmts.forEach { execute(it) }
+        } finally {
+            this.environment = before
+        }
+    }
 
     // Partition the universe of values into either truthy and falsey
     // Lox follows Ruby's truthiness rule
@@ -168,6 +182,12 @@ class Interpreter(
         val value = stmt.initializer?.let { evaluate(it) }
 
         environment.define(stmt.name.lexeme, value)
+        return null
+    }
+
+    override fun visitBlockStmt(stmt: Block): Unit? {
+        // Execute a block using a new environment instance, with the current one as the enclosing parent environment
+        executeBlock(stmt.statements, Environment(enclosing = environment))
         return null
     }
 

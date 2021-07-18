@@ -26,13 +26,13 @@ abstract class Runner {
         val scanner = Scanner(source = source, onError = ::error)
         val tokens = scanner.scanTokens()
         val parser = Parser(tokens = tokens, onError = ::error)
-        val statements = parser.parse()
+        val interpretable = parser.parse()
 
         if (hasError) {
             return
         }
 
-        interpreter.interpret(statements)
+        interpreter.interpret(interpretable)
 
         // println(PrettyPrinter().print(expression))
     }

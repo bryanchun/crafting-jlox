@@ -14,6 +14,8 @@ public abstract class Expr {
     public fun visitLiteralExpr(expr: Literal): R
 
     public fun visitUnaryExpr(expr: Unary): R
+
+    public fun visitVariableExpr(expr: Variable): R
   }
 }
 
@@ -46,4 +48,11 @@ public data class Unary(
 ) : Expr() {
   public override fun <R> accept(visitor: craftinglox.lox.ast.Expr.Visitor<R>): R =
       visitor.visitUnaryExpr(this)
+}
+
+public data class Variable(
+  public val name: Token
+) : Expr() {
+  public override fun <R> accept(visitor: craftinglox.lox.ast.Expr.Visitor<R>): R =
+      visitor.visitVariableExpr(this)
 }

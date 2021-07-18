@@ -1,7 +1,6 @@
 package craftinglox.lox
 
 import craftinglox.lox.ast.*
-import java.lang.RuntimeException
 
 // We need a superclass of any class to represent what could be the result
 // of any interpretation, hence Interpreter is a visitor that returns Any?
@@ -19,6 +18,9 @@ class Interpreter(
             onRuntimeError(error)
         }
     }
+
+    // An interpreter has an in-memory environment for its lifetime
+    private val environment = Environment()
 
     // Evaluate a sub-expression
     private fun evaluate(expr: Expr): Any? = expr.accept(this)
@@ -73,6 +75,10 @@ class Interpreter(
             else -> x.op(y)
         }
     }
+
+    /**
+     * Expr
+     */
 
     // Semantics choice: Left-to-right evaluation order
     // Semantics choice: We evaluate both operands before checking the type of either
@@ -132,6 +138,14 @@ class Interpreter(
         }
     }
 
+    override fun visitVariableExpr(expr: Variable): Any? {
+        return environment.get(expr.name)
+    }
+
+    /**
+     * Stmt
+     */
+
     override fun visitExpressionStmt(stmt: Expression): Unit? {
         evaluate(stmt.expression)
         return null
@@ -143,11 +157,17 @@ class Interpreter(
         return null
     }
 
+    // Semantics choice: We do not hard-require an initializer explicitly in a declaration, defaults to nil
+    override fun visitVarStmt(stmt: Var): Unit? {
+        val value = stmt.initializer?.let { evaluate(it) }
+
+        environment.define(stmt.name.lexeme, value)
+        return null
+    }
+
     /**
      * Error
      */
-    class RuntimeError(val token: Token, override val message: String?): RuntimeException()
-
     private fun throwDoubleOperandError(operator: Token): Nothing =
         throw RuntimeError(operator, "Operand must be a number.")
     private fun throwDoubleOperandsError(operator: Token): Nothing =

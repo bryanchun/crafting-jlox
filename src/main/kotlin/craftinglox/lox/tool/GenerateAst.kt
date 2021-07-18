@@ -18,6 +18,8 @@ object GenerateAst {
 
     private val VisiteeType = TypeVariableName("R")
 
+    private fun ClassName.nullable(): ClassName = copy(nullable = true, annotations = annotations, tags = tags)
+
     @JvmStatic
     fun main(args: Array<String>) {
         when {
@@ -42,11 +44,14 @@ object GenerateAst {
                             "expression" to Expr,
                         ),
                         "Literal" to listOf(
-                            "value" to ANY.copy(nullable = true, annotations = ANY.annotations, tags = ANY.tags),
+                            "value" to ANY.nullable(),
                         ),
                         "Unary" to listOf(
                             "operator" to Token,
                             "right" to Expr,
+                        ),
+                        "Variable" to listOf(
+                            "name" to Token,
                         ),
                     ),
                 )
@@ -61,6 +66,10 @@ object GenerateAst {
                         ),
                         "Print" to listOf(
                             "expression" to Expr,
+                        ),
+                        "Var" to listOf(
+                            "name" to Token,
+                            "initializer" to Expr.nullable(),
                         ),
                     ),
                 )

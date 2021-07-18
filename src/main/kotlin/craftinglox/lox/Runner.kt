@@ -53,7 +53,7 @@ abstract class Runner {
         }
     }
 
-    private fun runtimeError(error: Interpreter.RuntimeError) {
+    private fun runtimeError(error: RuntimeError) {
         System.err.println("${error.message}\n[line ${error.token.line}]")
         hasRuntimeError = true
     }

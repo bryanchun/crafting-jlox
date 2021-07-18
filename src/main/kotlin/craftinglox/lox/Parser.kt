@@ -3,23 +3,15 @@ package craftinglox.lox
 import craftinglox.lox.ast.*
 import java.lang.Exception
 import java.lang.RuntimeException
-import kotlin.math.exp
 
 class Parser(private val tokens: List<Token>, private val onError: (Token, String) -> Unit) {
 
     // Public API
-//    fun parse(): Expr? =
-//        try {
-//            expression()
-//        } catch (e: ParseError) {
-//            // Syntax error recovery
-//            null
-//        }
     fun parse(): List<Stmt> {
        val statements = mutableListOf<Stmt>()
 
        while (!isAtEnd()) {
-           statements.add(statement())
+           declaration()?.let { statements.add(it) }
        }
 
        return statements
@@ -38,6 +30,17 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
 
     private fun expression(): Expr = equality()
 
+    private fun declaration(): Stmt? =
+        try {
+            when {
+                match(TokenType.VAR) -> varDeclaration()
+                else -> statement()
+            }
+        } catch (error: ParseError) {
+            synchronize()
+            null
+        }
+
     private fun statement(): Stmt =
         when {
             match(TokenType.PRINT) -> printStatement()
@@ -54,6 +57,19 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
         val expr = expression()
         consume(TokenType.SEMICOLON, "Expect ';' after expression")
         return Expression(expr)
+    }
+
+    private fun varDeclaration(): Stmt {
+        val name = consume(TokenType.IDENTIFIER, "Expect variable name.")
+
+        val initializer = if (match(TokenType.EQUAL)) {
+            expression()
+        } else {
+            null
+        }
+
+        consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.")
+        return Var(name, initializer)
     }
 
     private fun equality(): Expr {
@@ -118,6 +134,7 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
             match(TokenType.TRUE) -> Literal(true)
             match(TokenType.NIL) -> Literal(null)
             match(TokenType.NUMBER, TokenType.STRING) -> Literal(previous().literal)
+            match(TokenType.IDENTIFIER) -> Variable(previous())
             match(TokenType.LEFT_PAREN) -> {
                 val expr = expression()
                 consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")

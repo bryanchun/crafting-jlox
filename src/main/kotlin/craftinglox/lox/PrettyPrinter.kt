@@ -28,6 +28,10 @@ class PrettyPrinter: Expr.Visitor<String> {
         return parenthesize(expr.operator.lexeme, expr.right)
     }
 
+    override fun visitVariableExpr(expr: Variable): String {
+        TODO("Not yet implemented")
+    }
+
     companion object {
 
         @JvmStatic

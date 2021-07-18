@@ -7,6 +7,8 @@ public abstract class Expr {
   public abstract fun <R> accept(visitor: Visitor<R>): R
 
   public interface Visitor<R> {
+    public fun visitAssignExpr(expr: Assign): R
+
     public fun visitBinaryExpr(expr: Binary): R
 
     public fun visitGroupingExpr(expr: Grouping): R
@@ -17,6 +19,14 @@ public abstract class Expr {
 
     public fun visitVariableExpr(expr: Variable): R
   }
+}
+
+public data class Assign(
+  public val name: Token,
+  public val `value`: Expr
+) : Expr() {
+  public override fun <R> accept(visitor: craftinglox.lox.ast.Expr.Visitor<R>): R =
+      visitor.visitAssignExpr(this)
 }
 
 public data class Binary(

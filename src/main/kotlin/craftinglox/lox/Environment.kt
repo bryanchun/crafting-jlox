@@ -18,8 +18,22 @@ class Environment {
             //   probably should not cause it to statically fail (cannot compile),
             //   otherwise mutually recursive definitions are not possible
             // - Other choices could be: Java's declare all first before defining any (bodies), C's forward declarations
-            else -> RuntimeError(name, "Undefined variable '$varName'.")
+            else -> throw RuntimeError(name, "Undefined variable '$varName'.")
         }
+    }
+
+    fun assign(name: Token, value: Any?) {
+        val varName = name.lexeme
+        when {
+            values.containsKey(varName) -> {
+                values[varName] = value
+            }
+            // Restricted API to not allow creating new variables
+            else -> {
+                throw RuntimeError(name, "Undefined variable '$varName'.")
+            }
+        }
+
     }
 
     private val values = mutableMapOf<String, Any?>()

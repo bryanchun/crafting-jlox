@@ -35,6 +35,10 @@ object GenerateAst {
                     packageName = "$PACKAGE_NAME.ast",
                     baseName = "Expr",
                     types = mapOf(
+                        "Assign" to listOf(
+                            "name" to Token,  // l-value
+                            "value" to Expr,
+                        ),
                         "Binary" to listOf(
                             "left" to Expr,
                             "operator" to Token,

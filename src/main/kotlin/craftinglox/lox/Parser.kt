@@ -28,7 +28,9 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
     // A non-ambiguous efficient-enough grammar is chosen out of many possible grammars
     // In ascending order of precedence
 
-    private fun expression(): Expr = equality()
+    private fun expression(): Expr {
+        return assignment()
+    }
 
     private fun declaration(): Stmt? =
         try {
@@ -70,6 +72,31 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
 
         consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.")
         return Var(name, initializer)
+    }
+
+    private fun assignment(): Expr {
+        // l-value can be anything - if this is even an assignment expression
+        val expr = equality()
+
+        return when {
+            match(TokenType.EQUAL) -> {
+                val equals = previous()
+                // Right-associative assignments -> recursive calls here
+                val value = assignment()
+
+                when (expr) {
+                    // Trick: After parsing the l-value, check if it falls under a list of allowed l-values
+                    // that qualifies as a valid "assignment target", e.g. Variable reference Expr
+                    // Notice that we kept using single token lookahead with no backtracking to achieve this
+                    is Variable -> Assign(name = expr.name, value = value)
+                    else -> {
+                        error(equals, "Invalid assignment target.")
+                        expr
+                    }
+                }
+            }
+            else -> expr
+        }
     }
 
     private fun equality(): Expr {

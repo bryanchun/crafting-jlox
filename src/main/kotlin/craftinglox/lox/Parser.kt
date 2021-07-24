@@ -7,15 +7,42 @@ import java.lang.RuntimeException
 class Parser(private val tokens: List<Token>, private val onError: (Token, String) -> Unit) {
 
     // Public API
-    fun parse(): List<Stmt> {
-       val statements = mutableListOf<Stmt>()
+    fun parse(): Interpretable =
+         parseStatements(onFailure = {
+            synchronize()
+            reset()
 
-       while (!isAtEnd()) {
-           declaration()?.let { statements.add(it) }
-       }
+            repl(onSuccess = {
+                return@parse Interpretable.Expression(it)
+            })
+        }).let { Interpretable.Statements(it) }
 
-       return statements
+    private inline fun parseStatements(onFailure: () -> Unit): List<Stmt> {
+        val statements = mutableListOf<Stmt>()
+        while (!isAtEnd()) {
+            try {
+                val decl = declaration()
+                statements.add(decl)
+            } catch (stmtParseError: ParseError) {
+                onFailure()
+                stmtParseError.errorOut()
+            }
+        }
+        return statements
     }
+
+    private inline fun repl(onSuccess: (Expr?) -> Unit) =
+        try {
+            val expr = expression()
+            if (isAtEnd()) {
+                expr
+            } else {
+                onError(peek(), "Invalid expression")
+                null
+            }.let(onSuccess)
+        } catch (exprParseError: ParseError) {
+            exprParseError.errorOut()
+        }
 
     // Recursive descent!
     // i.e. top-down parsing from root/most encompassing rule, and recursive parsing corresponds
@@ -32,15 +59,10 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
         return assignment()
     }
 
-    private fun declaration(): Stmt? =
-        try {
-            when {
-                match(TokenType.VAR) -> varDeclaration()
-                else -> statement()
-            }
-        } catch (error: ParseError) {
-            synchronize()
-            null
+    private fun declaration(): Stmt =
+        when {
+            match(TokenType.VAR) -> varDeclaration()
+            else -> statement()
         }
 
     private fun statement(): Stmt =
@@ -231,6 +253,13 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
     }
 
     /**
+     * Reset current cursor to beginning so that parser can re-parse a second pass
+     */
+    private fun reset() {
+        current = 0
+    }
+
+    /**
      * Check whether we have run out of tokens to parse
      */
     private fun isAtEnd(): Boolean = peek().type == TokenType.EOF
@@ -268,10 +297,9 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
     /**
      * Error
      */
-    class ParseError: RuntimeException()
+    class ParseError(val errorOut: () -> Unit): RuntimeException()
 
     private fun error(token: Token, message: String): ParseError {
-        onError(token, message)
-        return ParseError()
+        return ParseError { onError(token, message) }
     }
 }

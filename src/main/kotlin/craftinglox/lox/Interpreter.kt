@@ -9,10 +9,18 @@ class Interpreter(
 ): Expr.Visitor<Any?>, Stmt.Visitor<Unit?> {
 
     // Public API
-    fun interpret(statements: List<Stmt>) {
+    fun interpret(interpretable: Interpretable) {
         try {
-            for (statement in statements) {
-                execute(statement)
+            when (interpretable) {
+                is Interpretable.Statements -> {
+                    for (statement in interpretable.statements) {
+                        execute(statement)
+                    }
+                }
+                is Interpretable.Expression -> {
+                    val value = interpretable.expr?.let { evaluate(it) }
+                    println(stringify(value))
+                }
             }
         } catch (error: RuntimeError) {
             onRuntimeError(error)

@@ -179,9 +179,12 @@ class Interpreter(
 
     // Semantics choice: We do not hard-require an initializer explicitly in a declaration, defaults to nil
     override fun visitVarStmt(stmt: Var): Unit? {
-        val value = stmt.initializer?.let { evaluate(it) }
-
-        environment.define(stmt.name.lexeme, value)
+        stmt.initializer?.let {
+           val value = evaluate(it)
+            environment.define(stmt.name.lexeme, value)
+        } ?: let {
+            environment.define(stmt.name.lexeme, null, initialized = false)
+        }
         return null
     }
 

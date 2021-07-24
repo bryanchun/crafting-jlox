@@ -5,14 +5,22 @@ class Environment(
     // Parent environment
     val enclosing: Environment?
 ) {
+
+    private val values = mutableMapOf<String, Any?>()
+    private val uninitialized = mutableSetOf<String>()
+
     // For global environment, as the "end of the chain"
     constructor(): this(null)
 
     // Public API
-    fun define(name: String, value: Any?) {
+    fun define(name: String, value: Any?, initialized: Boolean = true) {
         // Semantics choice: Always re-define variable without checking if it's already defined
         // - At least at the toplevel (global variables)
-        values[name] = value
+        if (initialized) {
+            values[name] = value
+        } else {
+            uninitialized.add(name)
+        }
     }
 
     fun get(name: Token): Any? {
@@ -21,6 +29,7 @@ class Environment(
             values.containsKey(varName) -> values[varName]
             // Walk the environment chain, ask the parent environment for the variable; recursively
             enclosing != null -> enclosing.get(name)
+            uninitialized.contains(varName) -> throw RuntimeError(name, "Uninitialized variable '$varName'")
             // Semantics choice: Syntax vs Runtime error (don't use default null value please)
             // - Referring to a variable without necessarily evaluating it (e.g. in function body)
             //   probably should not cause it to statically fail (cannot compile),
@@ -35,6 +44,7 @@ class Environment(
         when {
             values.containsKey(varName) -> {
                 values[varName] = value
+                uninitialized.removeIf { it == varName }
             }
             // Assign to the parent environment if any; recursively
             enclosing != null -> {
@@ -47,6 +57,4 @@ class Environment(
         }
 
     }
-
-    private val values = mutableMapOf<String, Any?>()
 }

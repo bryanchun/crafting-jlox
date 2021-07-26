@@ -51,6 +51,11 @@ object GenerateAst {
                         "Literal" to listOf(
                             "value" to ANY.nullable(),
                         ),
+                        "Logical" to listOf(
+                            "left" to Expr,
+                            "operator" to Token,
+                            "right" to Expr,
+                        ),
                         "Unary" to listOf(
                             "operator" to Token,
                             "right" to Expr,
@@ -72,12 +77,21 @@ object GenerateAst {
                         "Expression" to listOf(
                             "expression" to Expr,
                         ),
+                        "If" to listOf(
+                            "condition" to Expr,
+                            "thenBranch" to Stmt,
+                            "elseBranch" to Stmt.nullable(),
+                        ),
                         "Print" to listOf(
                             "expression" to Expr,
                         ),
                         "Var" to listOf(
                             "name" to Token,
                             "initializer" to Expr.nullable(),
+                        ),
+                        "While" to listOf(
+                            "condition" to Expr,
+                            "body" to Stmt,
                         ),
                     ),
                 )

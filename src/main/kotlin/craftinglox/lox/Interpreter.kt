@@ -27,6 +27,14 @@ class Interpreter(
         }
     }
 
+    /**
+     * Error
+     */
+    private fun throwDoubleOperandError(operator: Token): Nothing =
+        throw RuntimeError(operator, "Operand must be a number.")
+    private fun throwDoubleOperandsError(operator: Token): Nothing =
+        throw RuntimeError(operator, "Operands must be numbers.")
+
     // An interpreter has an in-memory environment for its lifetime
     private var environment = Environment()
 
@@ -202,11 +210,31 @@ class Interpreter(
         return null
     }
 
-    /**
-     * Error
-     */
-    private fun throwDoubleOperandError(operator: Token): Nothing =
-        throw RuntimeError(operator, "Operand must be a number.")
-    private fun throwDoubleOperandsError(operator: Token): Nothing =
-        throw RuntimeError(operator, "Operands must be numbers.")
+    override fun visitIfStmt(stmt: If): Unit? {
+        if (isTruthy(evaluate(stmt.condition))) {
+            execute(stmt.thenBranch)
+        // Semantic choice: Short-circuiting conditional evaluation ('lazy')
+        } else {
+            stmt.elseBranch?.also { execute(it) }
+        }
+        return null
+    }
+
+    override fun visitLogicalExpr(expr: Logical): Any? {
+        val left = evaluate(expr.left)
+
+        return when {
+            expr.operator.type == TokenType.OR && isTruthy(left) -> left
+            expr.operator.type == TokenType.AND && !isTruthy(left) -> left
+            else -> evaluate(expr.right)
+        }
+    }
+
+    override fun visitWhileStmt(stmt: While): Unit? {
+        // re-evaluate the condition for its truthiness after each iteration of the side-effectful body
+        while (isTruthy(evaluate(stmt.condition))) {
+            execute(stmt.body)
+        }
+        return null
+    }
 }

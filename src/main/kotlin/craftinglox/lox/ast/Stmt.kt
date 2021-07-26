@@ -11,9 +11,13 @@ public abstract class Stmt {
 
     public fun visitExpressionStmt(stmt: Expression): R
 
+    public fun visitIfStmt(stmt: If): R
+
     public fun visitPrintStmt(stmt: Print): R
 
     public fun visitVarStmt(stmt: Var): R
+
+    public fun visitWhileStmt(stmt: While): R
   }
 }
 
@@ -31,6 +35,15 @@ public data class Expression(
       visitor.visitExpressionStmt(this)
 }
 
+public data class If(
+  public val condition: Expr,
+  public val thenBranch: Stmt,
+  public val elseBranch: Stmt?
+) : Stmt() {
+  public override fun <R> accept(visitor: craftinglox.lox.ast.Stmt.Visitor<R>): R =
+      visitor.visitIfStmt(this)
+}
+
 public data class Print(
   public val expression: Expr
 ) : Stmt() {
@@ -44,4 +57,12 @@ public data class Var(
 ) : Stmt() {
   public override fun <R> accept(visitor: craftinglox.lox.ast.Stmt.Visitor<R>): R =
       visitor.visitVarStmt(this)
+}
+
+public data class While(
+  public val condition: Expr,
+  public val body: Stmt
+) : Stmt() {
+  public override fun <R> accept(visitor: craftinglox.lox.ast.Stmt.Visitor<R>): R =
+      visitor.visitWhileStmt(this)
 }

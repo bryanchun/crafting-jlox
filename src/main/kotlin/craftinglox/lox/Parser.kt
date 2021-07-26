@@ -65,12 +65,77 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
             else -> statement()
         }
 
+    // 'Statement' is generic: multiline statements are also Stmt
     private fun statement(): Stmt =
         when {
+            match(TokenType.FOR) -> forStatement()
+            match(TokenType.IF) -> ifStatement()
             match(TokenType.PRINT) -> printStatement()
+            match(TokenType.WHILE) -> whileStatement()
             match(TokenType.LEFT_BRACE) -> Block(block())
             else -> expressionStatement()
         }
+
+    // Demonstrating syntactic sugar: without changing the interpreter, we parse for syntax
+    // as while + block expressions up for interpretation
+    private fun forStatement(): Stmt {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.")
+
+        val initializer = when {
+            match(TokenType.SEMICOLON) -> null
+            match(TokenType.VAR) -> varDeclaration()
+            else -> expressionStatement()
+        }
+
+        val condition = when {
+            !check(TokenType.SEMICOLON) -> expression()
+            else -> null
+        }
+        consume(TokenType.SEMICOLON, "Expect ';' after loop condition.")
+
+        val increment = when {
+            !check(TokenType.RIGHT_PAREN) -> expression()
+            else -> null
+        }
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.")
+
+        // Desugar for-loop syntax
+        var body = statement()
+
+        // Append increment to end of body
+        increment?.also {
+            body = Block(statements = listOf(body, Expression(it)))
+        }
+
+        body = While(
+            condition = condition ?: Literal(true),
+            body
+        )
+
+        initializer?.also {
+            // By wrapping the initializer line into a block, we preserve the for-loop scoping
+            // of the initializer variable by using what blocks already offer
+            body = Block(statements = listOf(it, body))
+        }
+
+        return body
+    }
+
+    private fun ifStatement(): Stmt {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.")
+        val condition = expression()
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.")
+
+        // Semantic choice: (hack to avoid extra work) eagerly collect statements under the then branch to
+        // avoid the dangling else problem
+
+        // Note that since statement contains blocks, we can accept a block of statements too,
+        // but it can also be a single statement without braces
+        val thenBranch = statement()
+        val elseBranch = if (match(TokenType.ELSE)) { statement() } else { null }
+
+        return If(condition, thenBranch, elseBranch)
+    }
 
     private fun printStatement(): Stmt {
         val value = expression()
@@ -80,7 +145,7 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
 
     private fun expressionStatement(): Stmt {
         val expr = expression()
-        consume(TokenType.SEMICOLON, "Expect ';' after expression")
+        consume(TokenType.SEMICOLON, "Expect ';' after expression.")
         return Expression(expr)
     }
 
@@ -97,9 +162,18 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
         return Var(name, initializer)
     }
 
+    private fun whileStatement(): Stmt {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.")
+        val condition = expression()
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.")
+
+        val body = statement()
+        return While(condition, body)
+    }
+
     private fun assignment(): Expr {
         // l-value can be anything - if this is even an assignment expression
-        val expr = equality()
+        val expr = or()
 
         return when {
             match(TokenType.EQUAL) -> {
@@ -122,67 +196,31 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
         }
     }
 
+    private fun or(): Expr = fold(::Logical, TokenType.OR) { and() }
+
+    private fun and(): Expr = fold(::Logical, TokenType.AND) { equality() }
+
     private fun block(): List<Stmt> {
         val statements = mutableListOf<Stmt>()
 
         // Check is not end of source because even when parsing invalid code, anytime without '}' terminating
         // we can run into the trouble of an infinite parsing loop (declaration -> statement -> block -> declaration)
         while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
-            declaration()?.let { statements.add(it) }
+            declaration().also { statements.add(it) }
         }
 
         consume(TokenType.RIGHT_BRACE, "Expect '}' after block.")
         return statements
     }
 
-    private fun equality(): Expr {
-        var expr = comparison()
+    private fun equality(): Expr = fold(::Binary, TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL) { comparison() }
 
-        while (match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)) {
-            val operator = previous()
-            val right = comparison()
-            expr = Binary(expr, operator, right)
-        }
+    private fun comparison(): Expr = fold(::Binary,
+        TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL) { term() }
 
-        return expr
-    }
+    private fun term(): Expr = fold(::Binary, TokenType.MINUS, TokenType.PLUS) { factor() }
 
-    private fun comparison(): Expr {
-        var expr = term()
-
-        while (match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL)) {
-            val operator = previous()
-            val right = term()
-            expr = Binary(expr, operator, right)
-        }
-
-        return expr
-    }
-
-
-    private fun term(): Expr {
-        var expr = factor()
-
-        while (match(TokenType.MINUS, TokenType.PLUS)) {
-            val operator = previous()
-            val right = factor()
-            expr = Binary(expr, operator, right)
-        }
-
-        return expr
-    }
-
-    private fun factor(): Expr {
-        var expr = unary()
-
-        while (match(TokenType.SLASH, TokenType.STAR)) {
-            val operator = previous()
-            val right = unary()
-            expr = Binary(expr, operator, right)
-        }
-
-        return expr
-    }
+    private fun factor(): Expr = fold(::Binary, TokenType.SLASH, TokenType.STAR) { unary() }
 
     private fun unary(): Expr =
         if (match(TokenType.BANG, TokenType.MINUS)) {
@@ -292,6 +330,21 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
         }
 
         advance()
+    }
+
+    /**
+     * Fold chained operators in a reusable fashion
+     */
+    private fun fold(binaryExpr: (Expr, Token, Expr) -> Expr, vararg tokenTypes: TokenType, target: () -> Expr): Expr {
+        var expr = target()
+
+        while (match(*tokenTypes)) {
+            val operator = previous()
+            val right = target()
+            expr = binaryExpr(expr, operator, right)
+        }
+
+        return expr
     }
 
     /**

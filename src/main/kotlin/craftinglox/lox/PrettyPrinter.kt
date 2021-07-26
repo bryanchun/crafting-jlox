@@ -36,6 +36,10 @@ class PrettyPrinter: Expr.Visitor<String> {
         TODO("Not yet implemented")
     }
 
+    override fun visitLogicalExpr(expr: Logical): String {
+        TODO("Not yet implemented")
+    }
+
     companion object {
 
         @JvmStatic

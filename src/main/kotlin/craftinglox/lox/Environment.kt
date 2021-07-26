@@ -42,7 +42,7 @@ class Environment(
     fun assign(name: Token, value: Any?) {
         val varName = name.lexeme
         when {
-            values.containsKey(varName) -> {
+            values.containsKey(varName) || uninitialized.contains(varName) -> {
                 values[varName] = value
                 uninitialized.removeIf { it == varName }
             }
@@ -51,9 +51,7 @@ class Environment(
                 enclosing.assign(name, value)
             }
             // Restricted API to not allow creating new variables
-            else -> {
-                throw RuntimeError(name, "Undefined variable '$varName'.")
-            }
+            else -> throw RuntimeError(name, "Undefined variable '$varName'.")
         }
 
     }

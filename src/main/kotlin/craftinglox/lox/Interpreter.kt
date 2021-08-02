@@ -237,4 +237,26 @@ class Interpreter(
         }
         return null
     }
+
+    override fun visitCallExpr(expr: Call): Any? {
+        val callee = evaluate(expr.callee)
+
+        // Semantic choice: order of evaluation is, evaluate arguments first, then the call
+        val arguments = mutableListOf<Any?>()
+        expr.arguments.forEach {
+            arguments.add(evaluate(it))
+        }
+
+        // Cast callee to be a Callable that has a call() method in it
+        val function = callee as? Callable
+            ?: throw RuntimeError(expr.paren, "Can only call functions and classes.")
+
+        // Semantic choice: Function arity checking
+        // (some languages are lenient on this)
+        if (arguments.size != function.arity()) {
+            throw RuntimeError(expr.paren, "Expected ${function.arity()} arguments but got ${arguments.size}.")
+        }
+
+        return function.call(this, arguments)
+    }
 }

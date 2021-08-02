@@ -45,6 +45,11 @@ object GenerateAst {
                             "operator" to Token,
                             "right" to Expr,
                         ),
+                        "Call" to listOf(
+                            "callee" to Expr,
+                            "paren" to Token,
+                            "arguments" to LIST.parameterizedBy(Expr),
+                        ),
                         "Grouping" to listOf(
                             "expression" to Expr,
                         ),

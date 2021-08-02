@@ -2,6 +2,7 @@ package craftinglox.lox.ast
 
 import craftinglox.lox.Token
 import kotlin.Any
+import kotlin.collections.List
 
 public abstract class Expr {
   public abstract fun <R> accept(visitor: Visitor<R>): R
@@ -10,6 +11,8 @@ public abstract class Expr {
     public fun visitAssignExpr(expr: Assign): R
 
     public fun visitBinaryExpr(expr: Binary): R
+
+    public fun visitCallExpr(expr: Call): R
 
     public fun visitGroupingExpr(expr: Grouping): R
 
@@ -38,6 +41,15 @@ public data class Binary(
 ) : Expr() {
   public override fun <R> accept(visitor: craftinglox.lox.ast.Expr.Visitor<R>): R =
       visitor.visitBinaryExpr(this)
+}
+
+public data class Call(
+  public val callee: Expr,
+  public val paren: Token,
+  public val arguments: List<Expr>
+) : Expr() {
+  public override fun <R> accept(visitor: craftinglox.lox.ast.Expr.Visitor<R>): R =
+      visitor.visitCallExpr(this)
 }
 
 public data class Grouping(

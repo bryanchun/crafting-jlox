@@ -227,7 +227,47 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
             val operator = previous()
             val right = unary()
             Unary(operator, right)
-        } else { primary() }
+        } else {
+            call()
+        }
+
+    private fun call(): Expr {
+        var expr = primary()
+
+        // This loop deals with curried function calls.
+        while (true) {
+            when {
+                match(TokenType.LEFT_PAREN) -> {
+                    expr = finishCall(expr)
+                }
+                else -> break
+            }
+        }
+
+        return expr
+    }
+
+    private fun finishCall(callee: Expr): Expr {
+        val arguments = mutableListOf<Expr>()
+
+        if (!check(TokenType.RIGHT_PAREN)) {
+            // If the next token is not already right paren
+            // Parse at least one argument
+            do {
+                // Upperbound number of arguments to take
+                if (arguments.size >= 255) {
+                    // Report and do not panic, keep going
+                    error(peek(), "Can't have more than 255 arguments.")
+                }
+
+                arguments.add(expression())
+            } while (match(TokenType.COMMA))
+        }
+
+        val token = consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.")
+
+        return Call(callee, token, arguments.toList())
+    }
 
     private fun primary(): Expr =
         when {

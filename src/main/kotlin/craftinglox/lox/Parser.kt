@@ -1,6 +1,7 @@
 package craftinglox.lox
 
 import craftinglox.lox.ast.*
+import craftinglox.lox.ast.Function
 import java.lang.Exception
 import java.lang.RuntimeException
 
@@ -61,6 +62,7 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
 
     private fun declaration(): Stmt =
         when {
+            match(TokenType.FUN) -> function("function")
             match(TokenType.VAR) -> varDeclaration()
             else -> statement()
         }
@@ -149,6 +151,34 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
         return Expression(expr)
     }
 
+    private fun function(kind: String): Function {
+        // kind for error reporting, telling between different kinds of functions, e.g. class methods too
+        val name = consume(TokenType.IDENTIFIER, "Expect $kind name.")
+
+        consume(TokenType.LEFT_PAREN, "Expect '(' after $kind name.")
+
+        val parameters = mutableListOf<Token>()
+        if (!check(TokenType.RIGHT_PAREN)) {
+            do {
+                if (parameters.size >= 255) {
+                    error(peek(), "Can't have more than 255 parameters.")
+                }
+
+                parameters.add(
+                    consume(TokenType.IDENTIFIER, "Expect parameter name.")
+                )
+            } while (match(TokenType.COMMA))
+        }
+
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.")
+
+        // Reporting left brace parsing error before parsing a block, so that we have more context in the caller
+        consume(TokenType.LEFT_BRACE, "Expect '{' before $kind body.")
+        val body = block()
+
+        return Function(name, parameters, body)
+    }
+
     private fun varDeclaration(): Stmt {
         val name = consume(TokenType.IDENTIFIER, "Expect variable name.")
 
@@ -200,6 +230,7 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
 
     private fun and(): Expr = fold(::Logical, TokenType.AND) { equality() }
 
+    // List of statements with an ending right brace (left brace is not expected)
     private fun block(): List<Stmt> {
         val statements = mutableListOf<Stmt>()
 

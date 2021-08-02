@@ -11,6 +11,8 @@ public abstract class Stmt {
 
     public fun visitExpressionStmt(stmt: Expression): R
 
+    public fun visitFunctionStmt(stmt: Function): R
+
     public fun visitIfStmt(stmt: If): R
 
     public fun visitPrintStmt(stmt: Print): R
@@ -33,6 +35,15 @@ public data class Expression(
 ) : Stmt() {
   public override fun <R> accept(visitor: craftinglox.lox.ast.Stmt.Visitor<R>): R =
       visitor.visitExpressionStmt(this)
+}
+
+public data class Function(
+  public val name: Token,
+  public val params: List<Token>,
+  public val body: List<Stmt>
+) : Stmt() {
+  public override fun <R> accept(visitor: craftinglox.lox.ast.Stmt.Visitor<R>): R =
+      visitor.visitFunctionStmt(this)
 }
 
 public data class If(

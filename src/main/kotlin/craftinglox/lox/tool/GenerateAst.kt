@@ -82,6 +82,11 @@ object GenerateAst {
                         "Expression" to listOf(
                             "expression" to Expr,
                         ),
+                        "Function" to listOf(
+                            "name" to Token,
+                            "params" to LIST.parameterizedBy(Token),
+                            "body" to LIST.parameterizedBy(Stmt),
+                        ),
                         "If" to listOf(
                             "condition" to Expr,
                             "thenBranch" to Stmt,

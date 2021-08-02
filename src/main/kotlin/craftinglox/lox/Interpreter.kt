@@ -1,6 +1,8 @@
 package craftinglox.lox
 
 import craftinglox.lox.ast.*
+import craftinglox.lox.ast.Function
+import craftinglox.lox.Function as LoxFunction
 
 // We need a superclass of any class to represent what could be the result
 // of any interpretation, hence Interpreter is a visitor that returns Any?
@@ -35,8 +37,23 @@ class Interpreter(
     private fun throwDoubleOperandsError(operator: Token): Nothing =
         throw RuntimeError(operator, "Operands must be numbers.")
 
+    // Global environment
+    val globals = Environment()
+
     // An interpreter has an in-memory environment for its lifetime
-    private var environment = Environment()
+    private var environment = globals
+
+    init {
+        // Native functions at global environment as runtime warms up
+        globals.define("clock", object : Callable {
+            override fun arity(): Int = 0
+
+            override fun call(interpreter: Interpreter, arguments: List<Any?>): Any =
+                System.currentTimeMillis().toDouble() / 1000.0
+
+            override fun toString(): String = "<native fn>"
+        })
+    }
 
     // Evaluate a sub-expression
     private fun evaluate(expr: Expr): Any? = expr.accept(this)
@@ -45,7 +62,7 @@ class Interpreter(
     private fun execute(stmt: Stmt) = stmt.accept(this)
 
     // Run a block (nesting, shadowing, lexical scoping)
-    private fun executeBlock(stmts: List<Stmt>, environment: Environment) {
+    fun executeBlock(stmts: List<Stmt>, environment: Environment) {
         // The interpreter is using a different passed-in environment each time it executes a block
         // Remember to clean up and restore the environment before the passed-in
         val before = this.environment
@@ -258,5 +275,15 @@ class Interpreter(
         }
 
         return function.call(this, arguments)
+    }
+
+    override fun visitFunctionStmt(stmt: Function): Unit? {
+        // Wraps the AST function into a runtime representation, ready to be invoked later on
+        val function = LoxFunction(stmt)
+
+        // Bind/define the function object in the current environment
+        environment.define(stmt.name.lexeme, function)
+
+        return null
     }
 }

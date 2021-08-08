@@ -73,6 +73,7 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
             match(TokenType.FOR) -> forStatement()
             match(TokenType.IF) -> ifStatement()
             match(TokenType.PRINT) -> printStatement()
+            match(TokenType.RETURN) -> returnStatement()
             match(TokenType.WHILE) -> whileStatement()
             match(TokenType.LEFT_BRACE) -> Block(block())
             else -> expressionStatement()
@@ -143,6 +144,18 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
         val value = expression()
         consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Print(value)
+    }
+
+    private fun returnStatement(): Stmt {
+        val keyboard = previous()
+        val value = when {
+            !check(TokenType.SEMICOLON) -> expression()
+            // Since a semicolon cannot begin an expression as the grammar specifies.
+            else -> null
+        }
+
+        consume(TokenType.SEMICOLON, "Expect ';' after return value.")
+        return Return(keyboard, value)
     }
 
     private fun expressionStatement(): Stmt {

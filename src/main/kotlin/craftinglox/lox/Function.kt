@@ -18,8 +18,13 @@ class Function(
             environment.define(param.lexeme, argument)
         }
 
-        interpreter.executeBlock(declaration.body, environment)
+        try {
+            interpreter.executeBlock(declaration.body, environment)
+        } catch (returnValue: Return) {
+            return returnValue.value
+        }
 
+        // Defaults to return nil even if function does not have explicit return statements.
         return null
     }
 

@@ -3,6 +3,7 @@ package craftinglox.lox
 import craftinglox.lox.ast.*
 import craftinglox.lox.ast.Function
 import craftinglox.lox.Function as LoxFunction
+import craftinglox.lox.Return as LoxReturn
 
 // We need a superclass of any class to represent what could be the result
 // of any interpretation, hence Interpreter is a visitor that returns Any?
@@ -285,5 +286,11 @@ class Interpreter(
         environment.define(stmt.name.lexeme, function)
 
         return null
+    }
+
+    override fun visitReturnStmt(stmt: Return): Unit? {
+        val value = stmt.value?.let { evaluate(it) }
+
+        throw LoxReturn(value)
     }
 }

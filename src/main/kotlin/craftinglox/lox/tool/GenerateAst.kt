@@ -95,6 +95,10 @@ object GenerateAst {
                         "Print" to listOf(
                             "expression" to Expr,
                         ),
+                        "Return" to listOf(
+                            "keyword" to Token,
+                            "value" to Expr.nullable(),
+                        ),
                         "Var" to listOf(
                             "name" to Token,
                             "initializer" to Expr.nullable(),

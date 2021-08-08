@@ -1,0 +1,18 @@
+fun thrice(fn) {
+  for (var i = 1; i <= 3; i = i + 1) {
+    fn(i);
+  }
+}
+
+thrice(fun (a) {
+  print a;
+});
+// "1".
+// "2".
+// "3".
+
+var f = fun (x) { return x + 1; };
+print f(42);
+
+// Make sure this is parsed as expression statement, not an invalid function declaration
+fun () {};

@@ -2,6 +2,7 @@ package craftinglox.lox
 
 import craftinglox.lox.ast.*
 import craftinglox.lox.ast.Function
+import craftinglox.lox.ast.Lambda
 import java.lang.Exception
 import java.lang.RuntimeException
 
@@ -62,7 +63,7 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
 
     private fun declaration(): Stmt =
         when {
-            match(TokenType.FUN) -> function("function")
+            check2(TokenType.FUN, TokenType.IDENTIFIER) -> function("function")
             match(TokenType.VAR) -> varDeclaration()
             else -> statement()
         }
@@ -165,31 +166,14 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
     }
 
     private fun function(kind: String): Function {
+        consume(TokenType.FUN, "Expect 'fun' when declaring function.")
+
         // kind for error reporting, telling between different kinds of functions, e.g. class methods too
         val name = consume(TokenType.IDENTIFIER, "Expect $kind name.")
 
-        consume(TokenType.LEFT_PAREN, "Expect '(' after $kind name.")
+        val (params, body) = functionParamsBody(kind)
 
-        val parameters = mutableListOf<Token>()
-        if (!check(TokenType.RIGHT_PAREN)) {
-            do {
-                if (parameters.size >= 255) {
-                    error(peek(), "Can't have more than 255 parameters.")
-                }
-
-                parameters.add(
-                    consume(TokenType.IDENTIFIER, "Expect parameter name.")
-                )
-            } while (match(TokenType.COMMA))
-        }
-
-        consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.")
-
-        // Reporting left brace parsing error before parsing a block, so that we have more context in the caller
-        consume(TokenType.LEFT_BRACE, "Expect '{' before $kind body.")
-        val body = block()
-
-        return Function(name, parameters, body)
+        return Function(name, params, body)
     }
 
     private fun varDeclaration(): Stmt {
@@ -241,7 +225,16 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
 
     private fun or(): Expr = fold(::Logical, TokenType.OR) { and() }
 
-    private fun and(): Expr = fold(::Logical, TokenType.AND) { equality() }
+    private fun and(): Expr = fold(::Logical, TokenType.AND) { lambda() }
+
+    private fun lambda(): Expr =
+        when {
+            match(TokenType.FUN) -> {
+                val (params, body) = functionParamsBody(kind = null)
+                Lambda(params, body)
+            }
+            else -> equality()
+        }
 
     // List of statements with an ending right brace (left brace is not expected)
     private fun block(): List<Stmt> {
@@ -364,6 +357,17 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
         if (isAtEnd()) { false } else { peek().type == type }
 
     /**
+     * Check whether the next 2 tokens is of the given token types
+     * Doesn't consume token, only peeks
+     */
+    private fun check2(first: TokenType, second: TokenType): Boolean {
+        val next = peek()
+        val nextNext = tokens[current + 1]
+
+        return nextNext.type != TokenType.EOF && next.type == first && nextNext.type == second
+    }
+
+    /**
      * Consume current token and return it
      * (similar to scanner's)
      */
@@ -429,6 +433,38 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
         }
 
         return expr
+    }
+
+    /**
+     * Parse function parameters and body as a Lambda
+     */
+    private fun functionParamsBody(kind: String?): Pair<List<Token>, List<Stmt>> {
+        consume(TokenType.LEFT_PAREN,
+            kind?.let { "Expect '(' after $it name." }
+                // No kind (name) means this is a lambda.
+                ?: "Expect '(' after 'fun'."
+        )
+
+        val parameters = mutableListOf<Token>()
+        if (!check(TokenType.RIGHT_PAREN)) {
+            do {
+                if (parameters.size >= 255) {
+                    error(peek(), "Can't have more than 255 parameters.")
+                }
+
+                parameters.add(
+                    consume(TokenType.IDENTIFIER, "Expect parameter name.")
+                )
+            } while (match(TokenType.COMMA))
+        }
+
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.")
+
+        // Reporting left brace parsing error before parsing a block, so that we have more context in the caller
+        consume(TokenType.LEFT_BRACE, "Expect '{' before $kind body.")
+        val body = block()
+
+        return parameters to body
     }
 
     /**

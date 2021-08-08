@@ -1,6 +1,7 @@
 package craftinglox.lox
 
 import craftinglox.lox.ast.*
+import craftinglox.lox.ast.Lambda
 
 class PrettyPrinter: Expr.Visitor<String> {
 
@@ -41,6 +42,10 @@ class PrettyPrinter: Expr.Visitor<String> {
     }
 
     override fun visitCallExpr(expr: Call): String {
+        TODO("Not yet implemented")
+    }
+
+    override fun visitLambdaExpr(expr: Lambda): String {
         TODO("Not yet implemented")
     }
 

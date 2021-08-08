@@ -53,6 +53,10 @@ object GenerateAst {
                         "Grouping" to listOf(
                             "expression" to Expr,
                         ),
+                        "Lambda" to listOf(
+                            "params" to LIST.parameterizedBy(Token),
+                            "body" to LIST.parameterizedBy(Stmt),
+                        ),
                         "Literal" to listOf(
                             "value" to ANY.nullable(),
                         ),

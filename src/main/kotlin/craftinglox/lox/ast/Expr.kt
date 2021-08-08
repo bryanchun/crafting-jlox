@@ -16,6 +16,8 @@ public abstract class Expr {
 
     public fun visitGroupingExpr(expr: Grouping): R
 
+    public fun visitLambdaExpr(expr: Lambda): R
+
     public fun visitLiteralExpr(expr: Literal): R
 
     public fun visitLogicalExpr(expr: Logical): R
@@ -57,6 +59,14 @@ public data class Grouping(
 ) : Expr() {
   public override fun <R> accept(visitor: craftinglox.lox.ast.Expr.Visitor<R>): R =
       visitor.visitGroupingExpr(this)
+}
+
+public data class Lambda(
+  public val params: List<Token>,
+  public val body: List<Stmt>
+) : Expr() {
+  public override fun <R> accept(visitor: craftinglox.lox.ast.Expr.Visitor<R>): R =
+      visitor.visitLambdaExpr(this)
 }
 
 public data class Literal(

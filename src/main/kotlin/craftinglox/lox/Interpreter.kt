@@ -3,6 +3,7 @@ package craftinglox.lox
 import craftinglox.lox.ast.*
 import craftinglox.lox.ast.Function
 import craftinglox.lox.Function as LoxFunction
+import craftinglox.lox.Lambda as LoxLambda
 import craftinglox.lox.Return as LoxReturn
 
 // We need a superclass of any class to represent what could be the result
@@ -194,6 +195,10 @@ class Interpreter(
         val value = evaluate(expr.value)
         environment.assign(expr.name, value)
         return value
+    }
+
+    override fun visitLambdaExpr(expr: Lambda): Any {
+        return LoxLambda(expr = expr, closure = environment)
     }
 
     /**

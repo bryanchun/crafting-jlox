@@ -1,0 +1,8 @@
+// Function arguments share the same scope as function-local variables.
+fun scope(a) {
+  var a = "local";
+
+  print a;
+}
+
+scope("global");

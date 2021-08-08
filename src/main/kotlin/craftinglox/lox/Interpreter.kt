@@ -279,8 +279,10 @@ class Interpreter(
     }
 
     override fun visitFunctionStmt(stmt: Function): Unit? {
-        // Wraps the AST function into a runtime representation, ready to be invoked later on
-        val function = LoxFunction(stmt)
+        // Wraps the AST function into a runtime representation, ready to be invoked later on.
+        // Captures the current parent environment when declaring* the function, so that the closure environment
+        // is preserved with the function object for later invocations. i.e. lexical scope not dynamic scope.
+        val function = LoxFunction(declaration = stmt, closure = environment)
 
         // Bind/define the function object in the current environment
         environment.define(stmt.name.lexeme, function)

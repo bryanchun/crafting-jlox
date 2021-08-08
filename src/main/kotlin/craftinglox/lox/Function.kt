@@ -4,14 +4,15 @@ import craftinglox.lox.ast.Function as AstFunction
 
 // Function object representation
 class Function(
-    private val declaration: AstFunction
+    private val declaration: AstFunction,
+    private val closure: Environment,
 ) : Callable {
     override fun arity(): Int = declaration.params.size
 
     override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
         // Core language: Each function *call* gets its own new environment
         // Parameter variables are only defined within this function scope
-        val environment = Environment(interpreter.globals)
+        val environment = Environment(closure)
 
         // Parameters and arguments are checked to have an equal arity before the call gets interpreted
         for ((param, argument) in declaration.params.zip(arguments)) {
@@ -21,6 +22,7 @@ class Function(
         try {
             interpreter.executeBlock(declaration.body, environment)
         } catch (returnValue: Return) {
+            // Implements return: early or last-line
             return returnValue.value
         }
 

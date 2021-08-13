@@ -39,6 +39,23 @@ class Environment(
         }
     }
 
+    fun getAt(distance: Int, name: String) = ancestor(distance).values[name]
+
+    fun assignAt(distance: Int, name: Token, value: Any?) {
+        ancestor(distance).values[name.lexeme] = value
+    }
+
+    fun ancestor(distance: Int): Environment {
+        var environment: Environment = this
+        // Fixed number of hops using the distance
+        repeat(distance) {
+            // Deep trust/coupling in the resolver that the exact number of hops with the distance
+            // will bring the environment to the one that defined the variable
+            environment = environment.enclosing!!
+        }
+        return environment
+    }
+
     fun assign(name: Token, value: Any?) {
         val varName = name.lexeme
         when {

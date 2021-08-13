@@ -25,12 +25,14 @@ abstract class Runner {
     protected fun runLox(source: String) {
         val scanner = Scanner(source = source, onError = ::error)
         val tokens = scanner.scanTokens()
+
         val parser = Parser(tokens = tokens, onError = ::error)
         val interpretable = parser.parse()
+        if (hasError) { return }
 
-        if (hasError) {
-            return
-        }
+        val resolver = Resolver(interpreter = interpreter, onError = ::error)
+        resolver.resolve(interpretable)
+        if (hasError) { return }
 
         interpreter.interpret(interpretable)
 

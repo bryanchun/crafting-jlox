@@ -31,6 +31,10 @@ class Interpreter(
         }
     }
 
+    fun resolve(expr: Expr, depth: Int) {
+        locals[expr] = depth
+    }
+
     /**
      * Error
      */
@@ -44,6 +48,11 @@ class Interpreter(
 
     // An interpreter has an in-memory environment for its lifetime
     private var environment = globals
+
+    // Resolution information for variables in a side table
+    // Know exactly which parent scope was the variable defined/captured, so that we can statically look them up again
+    // when using them, instead of dynamically resolving to the latest variable value.
+    private val locals = mutableMapOf<Expr, Int>()
 
     init {
         // Native functions at global environment as runtime warms up
@@ -109,6 +118,14 @@ class Interpreter(
             // For most values, we can use the implementation language's toString implementation
             else -> x.toString()
         }
+
+    private fun lookupVariable(name: Token, expr: Expr): Any? {
+        val distance = locals[expr]
+        // Look up local variable, or fall back to global variable
+        return distance?.let {
+            environment.getAt(it, name.lexeme)
+        } ?: globals.get(name)
+    }
 
     private fun <R> Double?.unaryOp(op: Double.() -> R): R? {
         return when (this) {
@@ -188,12 +205,19 @@ class Interpreter(
     }
 
     override fun visitVariableExpr(expr: Variable): Any? {
-        return environment.get(expr.name)
+        return lookupVariable(expr.name, expr)
     }
 
     override fun visitAssignExpr(expr: Assign): Any? {
         val value = evaluate(expr.value)
-        environment.assign(expr.name, value)
+
+        val distance = locals[expr]
+        distance?.also {
+            environment.assignAt(it, expr.name, value)
+        } ?: also {
+            globals.assign(expr.name, value)
+        }
+
         return value
     }
 

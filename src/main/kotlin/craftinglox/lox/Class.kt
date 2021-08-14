@@ -2,6 +2,7 @@ package craftinglox.lox
 
 class Class(
     val name: String,
+    val superclass: Class?,
     // A class stores behaviors.
     private val methods: Map<String, Function>,
 ) : Callable {

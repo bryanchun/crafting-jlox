@@ -17,6 +17,7 @@ object GenerateAst {
     private val Expr = ClassName("${PACKAGE_NAME}.ast", "Expr")
     private val Stmt = ClassName("${PACKAGE_NAME}.ast", "Stmt")
     private val Function = ClassName("${PACKAGE_NAME}.ast", "Function")
+    private val Variable = ClassName("${PACKAGE_NAME}.ast", "Variable")
 
     private val VisiteeType = TypeVariableName("R")
 
@@ -98,6 +99,7 @@ object GenerateAst {
                         ),
                         "Class" to listOf(
                             "name" to Token,
+                            "superclass" to Variable.nullable(),
                             "methods" to LIST.parameterizedBy(Function),
                         ),
                         "Expression" to listOf(

@@ -54,6 +54,17 @@ class Resolver(
             declare(stmt.name)
             define(stmt.name)
 
+            stmt.superclass?.also {
+                // Guard against self-inheriting classes (in the same scope), which is considered erroneous
+                if (stmt.name.lexeme == it.name.lexeme) {
+                    onError(it.name, "A class can't inherit from itself.")
+                }
+
+                // Usually superclasses are defined at toplevel as global variables
+                // But we still have to support local variable class definitions, hence the resolve
+                resolve(it)
+            }
+
             withScope {
                 scopes.last()["this"] = true
 

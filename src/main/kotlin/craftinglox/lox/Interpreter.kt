@@ -260,6 +260,16 @@ class Interpreter(
     }
 
     override fun visitClassStmt(stmt: Class): Unit? {
+        val superclass = stmt.superclass?.let {
+            // Check that the superclass resolves to a class representation indeed
+            when (val superclass = evaluate(it)) {
+                is LoxClass -> superclass
+                else -> {
+                    throw RuntimeError(it.name, "Superclass must be a class.")
+                }
+            }
+        }
+
         // Making this variable binding process 2-stage allows references to the class inside its own methods
         environment.define(stmt.name.lexeme, null)
 
@@ -270,7 +280,7 @@ class Interpreter(
             )
         }
 
-        val clazz = LoxClass(name = stmt.name.lexeme, methods = methods)
+        val clazz = LoxClass(name = stmt.name.lexeme, superclass = superclass, methods = methods)
         environment.assign(stmt.name, clazz)
 
         return null

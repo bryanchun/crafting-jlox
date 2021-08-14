@@ -169,6 +169,17 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
     private fun classDeclaration(): Stmt {
         val name = consume(TokenType.IDENTIFIER, "Expect class name.")
 
+        // Superclass is an optional variable
+        // - We have no root object to do implicit inheritance from
+        // - Using a variable can make us parse more precisely than a mere token that does not refer to a defined class
+        val superclass = when {
+            match(TokenType.LESS) -> {
+                consume(TokenType.IDENTIFIER, "Expect superclass name.")
+                Variable(previous())
+            }
+            else -> null
+        }
+
         consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
 
         val methods = mutableListOf<Function>()
@@ -178,7 +189,7 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
 
         consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
 
-        return Class(name, methods)
+        return Class(name, superclass, methods)
     }
 
     private fun function(kind: String): Function {

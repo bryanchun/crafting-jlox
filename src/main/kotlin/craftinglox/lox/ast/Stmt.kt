@@ -36,6 +36,7 @@ public data class Block(
 
 public data class Class(
   public val name: Token,
+  public val superclass: Variable?,
   public val methods: List<Function>
 ) : Stmt() {
   public override fun <R> accept(visitor: craftinglox.lox.ast.Stmt.Visitor<R>): R =

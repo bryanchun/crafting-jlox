@@ -36,7 +36,7 @@ class Resolver(
 
     private var currentFunction: FunctionType = FunctionType.NONE
 
-    enum class FunctionType { NONE, FUNCTION }
+    enum class FunctionType { NONE, FUNCTION, METHOD }
 
     // Core logic
     override fun visitBlockStmt(stmt: Block): Unit? {
@@ -50,6 +50,11 @@ class Resolver(
     override fun visitClassStmt(stmt: Class): Unit? {
         declare(stmt.name)
         define(stmt.name)
+
+        stmt.methods.forEach {
+            val declaration = FunctionType.METHOD
+            resolveFunction(it, declaration)
+        }
 
         return null
     }

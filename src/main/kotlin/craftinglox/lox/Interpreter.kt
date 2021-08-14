@@ -262,7 +262,13 @@ class Interpreter(
     override fun visitClassStmt(stmt: Class): Unit? {
         // Making this variable binding process 2-stage allows references to the class inside its own methods
         environment.define(stmt.name.lexeme, null)
-        val clazz = LoxClass(stmt.name.lexeme)
+
+        val methods = mutableMapOf<String, LoxFunction>()
+        for (method in stmt.methods) {
+            methods[method.name.lexeme] = LoxFunction(method, environment)
+        }
+
+        val clazz = LoxClass(name = stmt.name.lexeme, methods = methods)
         environment.assign(stmt.name, clazz)
 
         return null

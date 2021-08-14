@@ -11,6 +11,16 @@ class Function(
     expr = AstLambda(declaration.params, declaration.body),
     closure = closure,
 ) {
+    // Bind the function with an instance through the 'this' variable and new wrapping closure
+    // to return a bound method
+    fun bind(instance: Instance): Function =
+        Function(
+            declaration = declaration,
+            closure = Environment(closure).apply {
+                define("this", instance)
+            },
+        )
+
     override fun toString(): String = "<fn ${declaration.name.lexeme}>"
 }
 

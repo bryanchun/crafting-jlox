@@ -75,6 +75,9 @@ object GenerateAst {
                             "name" to Token,
                             "value" to Expr,
                         ),
+                        "This" to listOf(
+                            "keyword" to Token,
+                        ),
                         "Unary" to listOf(
                             "operator" to Token,
                             "right" to Expr,

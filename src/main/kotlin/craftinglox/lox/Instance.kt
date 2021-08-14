@@ -12,7 +12,7 @@ class Instance(
 
         return when {
             fields.containsKey(name.lexeme) -> fields[name.lexeme]
-            clazz.findMethod(name.lexeme)?.also { method = it } != null -> method
+            clazz.findMethod(name.lexeme)?.also { method = it } != null -> method?.bind(this)
             else -> throw RuntimeError(name, "Undefined property '${name.lexeme}'.")
         }
     }

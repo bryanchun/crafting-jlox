@@ -26,6 +26,8 @@ public abstract class Expr {
 
     public fun visitSetExpr(expr: Set): R
 
+    public fun visitThisExpr(expr: This): R
+
     public fun visitUnaryExpr(expr: Unary): R
 
     public fun visitVariableExpr(expr: Variable): R
@@ -104,6 +106,13 @@ public data class Set(
 ) : Expr() {
   public override fun <R> accept(visitor: craftinglox.lox.ast.Expr.Visitor<R>): R =
       visitor.visitSetExpr(this)
+}
+
+public data class This(
+  public val keyword: Token
+) : Expr() {
+  public override fun <R> accept(visitor: craftinglox.lox.ast.Expr.Visitor<R>): R =
+      visitor.visitThisExpr(this)
 }
 
 public data class Unary(

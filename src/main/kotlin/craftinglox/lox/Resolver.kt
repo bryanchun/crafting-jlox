@@ -35,8 +35,10 @@ class Resolver(
     private val scopes: MutableList<MutableMap<String, Boolean>> = mutableListOf()
 
     private var currentFunction: FunctionType = FunctionType.NONE
+    private var currentClass: ClassType = ClassType.NONE
 
     enum class FunctionType { NONE, FUNCTION, METHOD }
+    enum class ClassType { NONE, CLASS }
 
     // Core logic
     override fun visitBlockStmt(stmt: Block): Unit? {
@@ -48,12 +50,18 @@ class Resolver(
     }
 
     override fun visitClassStmt(stmt: Class): Unit? {
-        declare(stmt.name)
-        define(stmt.name)
+        withClass(ClassType.CLASS) {
+            declare(stmt.name)
+            define(stmt.name)
 
-        stmt.methods.forEach {
-            val declaration = FunctionType.METHOD
-            resolveFunction(it, declaration)
+            withScope {
+                scopes.last()["this"] = true
+
+                stmt.methods.forEach {
+                    val declaration = FunctionType.METHOD
+                    resolveFunction(it, declaration)
+                }
+            }
         }
 
         return null
@@ -191,6 +199,18 @@ class Resolver(
         return null
     }
 
+    override fun visitThisExpr(expr: This): Unit? {
+        // 'this' expressions can only be used in class declarations
+        if (currentClass == ClassType.NONE) {
+            onError(expr.keyword, "Can't use 'this' outside of a class.")
+        }
+
+        // Resolve 'this' just like a regular local variable, as parsed from the keyword
+        resolveLocal(expr, expr.keyword)
+
+        return null
+    }
+
     override fun visitUnaryExpr(expr: Unary): Unit? {
         resolve(expr.right)
 
@@ -214,21 +234,18 @@ class Resolver(
     }
 
     private fun resolveFunction(function: Function, type: FunctionType) {
-        val enclosingFunction = currentFunction
-        currentFunction = type
-
-        withScope {
-            function.params.forEach {
-                declare(it)
-                define(it)
+        withFunction(type) {
+            withScope {
+                function.params.forEach {
+                    declare(it)
+                    define(it)
+                }
+                // In semantic analysis, we eagerly resolve things inside the function body
+                // exactly once
+                // Even though it was not called
+                resolve(function.body)
             }
-            // In semantic analysis, we eagerly resolve things inside the function body
-            // exactly once
-            // Even though it was not called
-            resolve(function.body)
         }
-
-        currentFunction = enclosingFunction
     }
 
     private fun resolveLambda(lambda: Lambda) {
@@ -249,6 +266,24 @@ class Resolver(
 
         // End
         scopes.removeLast()
+    }
+
+    private fun withFunction(type: FunctionType, action: () -> Unit) {
+        val enclosingFunction = currentFunction
+        currentFunction = type
+
+        action()
+
+        currentFunction = enclosingFunction
+    }
+
+    private fun withClass(type: ClassType, action: () -> Unit) {
+        val enclosingClass = currentClass
+        currentClass = type
+
+        action()
+
+        currentClass = enclosingClass
     }
 
     private fun declare(name: Token) {

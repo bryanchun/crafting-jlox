@@ -338,6 +338,7 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
             match(TokenType.TRUE) -> Literal(true)
             match(TokenType.NIL) -> Literal(null)
             match(TokenType.NUMBER, TokenType.STRING) -> Literal(previous().literal)
+            match(TokenType.THIS) -> This(previous())
             match(TokenType.IDENTIFIER) -> Variable(previous())
             match(TokenType.LEFT_PAREN) -> {
                 val expr = expression()

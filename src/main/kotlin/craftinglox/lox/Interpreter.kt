@@ -305,6 +305,10 @@ class Interpreter(
         }
     }
 
+    override fun visitThisExpr(expr: This): Any? {
+        return lookupVariable(expr.keyword, expr)
+    }
+
     override fun visitWhileStmt(stmt: While): Unit? {
         // re-evaluate the condition for its truthiness after each iteration of the side-effectful body
         while (isTruthy(evaluate(stmt.condition))) {

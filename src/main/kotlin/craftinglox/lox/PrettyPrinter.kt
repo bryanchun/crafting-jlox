@@ -75,4 +75,8 @@ class PrettyPrinter: Expr.Visitor<String> {
     override fun visitSetExpr(expr: Set): String {
         TODO("Not yet implemented")
     }
+
+    override fun visitThisExpr(expr: This): String {
+        TODO("Not yet implemented")
+    }
 }

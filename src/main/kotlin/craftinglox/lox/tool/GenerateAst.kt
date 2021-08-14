@@ -76,6 +76,10 @@ object GenerateAst {
                             "name" to Token,
                             "value" to Expr,
                         ),
+                        "Super" to listOf(
+                            "keyword" to Token,
+                            "method" to Token,
+                        ),
                         "This" to listOf(
                             "keyword" to Token,
                         ),

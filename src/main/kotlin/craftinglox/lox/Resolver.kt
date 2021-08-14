@@ -38,7 +38,7 @@ class Resolver(
     private var currentClass: ClassType = ClassType.NONE
 
     enum class FunctionType { NONE, FUNCTION, INITIALIZER, METHOD }
-    enum class ClassType { NONE, CLASS }
+    enum class ClassType { NONE, CLASS, SUBCLASS }
 
     // Core logic
     override fun visitBlockStmt(stmt: Block): Unit? {
@@ -55,6 +55,8 @@ class Resolver(
             define(stmt.name)
 
             stmt.superclass?.also {
+                currentClass = ClassType.SUBCLASS
+
                 // Guard against self-inheriting classes (in the same scope), which is considered erroneous
                 if (stmt.name.lexeme == it.name.lexeme) {
                     onError(it.name, "A class can't inherit from itself.")
@@ -65,15 +67,27 @@ class Resolver(
                 resolve(it)
             }
 
-            withScope {
-                scopes.last()["this"] = true
+            val resolveClassBody = {
+                withScope {
+                    scopes.last()["this"] = true
 
-                stmt.methods.forEach {
-                    val declaration =
-                        if (it.name.lexeme == "init") { FunctionType.INITIALIZER } else { FunctionType.METHOD }
-                    resolveFunction(it, declaration)
+                    stmt.methods.forEach {
+                        val declaration =
+                            if (it.name.lexeme == "init") { FunctionType.INITIALIZER } else { FunctionType.METHOD }
+                        resolveFunction(it, declaration)
+                    }
                 }
             }
+
+            stmt.superclass
+                ?.also {
+                    withScope {
+                        scopes.last()["super"] = true
+                        resolveClassBody()
+                    }
+                }
+                // Optimization note: Only create the class declaration scope if there is a superclass
+                ?: resolveClassBody()
         }
 
         return null
@@ -217,6 +231,23 @@ class Resolver(
         // Property names are not resolved, since they are deferred to be resolved dynamically
         resolve(expr.value)
         resolve(expr.`object`)
+
+        return null
+    }
+
+    override fun visitSuperExpr(expr: Super): Unit? {
+        when {
+            currentClass == ClassType.NONE -> {
+                onError(expr.keyword, "Can't use 'super' outside of a class.")
+            }
+            currentClass != ClassType.SUBCLASS -> {
+                onError(expr.keyword, "Can't use 'super' in a class with no superclass.")
+            }
+            else -> {
+                // With 'super' defined in a scope chain, we are able to resolve it
+                resolveLocal(expr, expr.keyword)
+            }
+        }
 
         return null
     }

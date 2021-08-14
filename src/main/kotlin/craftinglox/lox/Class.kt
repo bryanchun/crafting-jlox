@@ -9,6 +9,9 @@ class Class(
 
     fun findMethod(name: String): Function? =
         methods.takeIf { it.containsKey(name) }?.get(name)
+            // If the current class does not contain the method
+            // Recursively look up the method in the superclass (if any)
+            ?: superclass?.let { it.findMethod(name) }
 
     override fun arity(): Int = findMethod("init")?.arity() ?: 0
 

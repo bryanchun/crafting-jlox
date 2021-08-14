@@ -349,6 +349,13 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
             match(TokenType.TRUE) -> Literal(true)
             match(TokenType.NIL) -> Literal(null)
             match(TokenType.NUMBER, TokenType.STRING) -> Literal(previous().literal)
+            match(TokenType.SUPER) -> {
+                // 'super' syntax must be dot-accessed, it cannot stand alone
+                val keyword = previous()
+                consume(TokenType.DOT, "Expect '.' after 'super'.")
+                val token = consume(TokenType.IDENTIFIER, "Expect superclass method name.")
+                Super(keyword, token)
+            }
             match(TokenType.THIS) -> This(previous())
             match(TokenType.IDENTIFIER) -> Variable(previous())
             match(TokenType.LEFT_PAREN) -> {

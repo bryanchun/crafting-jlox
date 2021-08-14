@@ -16,6 +16,7 @@ object GenerateAst {
     private val Token = ClassName(PACKAGE_NAME, "Token")
     private val Expr = ClassName("${PACKAGE_NAME}.ast", "Expr")
     private val Stmt = ClassName("${PACKAGE_NAME}.ast", "Stmt")
+    private val Function = ClassName("${PACKAGE_NAME}.ast", "Function")
 
     private val VisiteeType = TypeVariableName("R")
 
@@ -82,6 +83,10 @@ object GenerateAst {
                     types = mapOf(
                         "Block" to listOf(
                             "statements" to LIST.parameterizedBy(Stmt),
+                        ),
+                        "Class" to listOf(
+                            "name" to Token,
+                            "methods" to LIST.parameterizedBy(Function),
                         ),
                         "Expression" to listOf(
                             "expression" to Expr,

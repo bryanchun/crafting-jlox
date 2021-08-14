@@ -1,6 +1,7 @@
 package craftinglox.lox
 
 import craftinglox.lox.ast.*
+import craftinglox.lox.ast.Class
 import craftinglox.lox.ast.Function
 import craftinglox.lox.ast.Lambda
 import craftinglox.lox.ast.Return
@@ -41,6 +42,13 @@ class Resolver(
         withScope {
             resolve(stmt.statements)
         }
+
+        return null
+    }
+
+    override fun visitClassStmt(stmt: Class): Unit? {
+        declare(stmt.name)
+        define(stmt.name)
 
         return null
     }

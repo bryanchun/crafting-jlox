@@ -9,6 +9,8 @@ public abstract class Stmt {
   public interface Visitor<R> {
     public fun visitBlockStmt(stmt: Block): R
 
+    public fun visitClassStmt(stmt: Class): R
+
     public fun visitExpressionStmt(stmt: Expression): R
 
     public fun visitFunctionStmt(stmt: Function): R
@@ -30,6 +32,14 @@ public data class Block(
 ) : Stmt() {
   public override fun <R> accept(visitor: craftinglox.lox.ast.Stmt.Visitor<R>): R =
       visitor.visitBlockStmt(this)
+}
+
+public data class Class(
+  public val name: Token,
+  public val methods: List<Function>
+) : Stmt() {
+  public override fun <R> accept(visitor: craftinglox.lox.ast.Stmt.Visitor<R>): R =
+      visitor.visitClassStmt(this)
 }
 
 public data class Expression(

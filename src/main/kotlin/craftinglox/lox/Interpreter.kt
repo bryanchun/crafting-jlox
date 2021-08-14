@@ -2,6 +2,7 @@ package craftinglox.lox
 
 import craftinglox.lox.ast.*
 import craftinglox.lox.ast.Function
+import craftinglox.lox.Class as LoxClass
 import craftinglox.lox.Function as LoxFunction
 import craftinglox.lox.Lambda as LoxLambda
 import craftinglox.lox.Return as LoxReturn
@@ -254,6 +255,15 @@ class Interpreter(
     override fun visitBlockStmt(stmt: Block): Unit? {
         // Execute a block using a new environment instance, with the current one as the enclosing parent environment
         executeBlock(stmt.statements, Environment(enclosing = environment))
+        return null
+    }
+
+    override fun visitClassStmt(stmt: Class): Unit? {
+        // Making this variable binding process 2-stage allows references to the class inside its own methods
+        environment.define(stmt.name.lexeme, null)
+        val clazz = LoxClass(stmt.name.lexeme)
+        environment.assign(stmt.name, clazz)
+
         return null
     }
 

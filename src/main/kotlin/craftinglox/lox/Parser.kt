@@ -63,7 +63,8 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
 
     private fun declaration(): Stmt =
         when {
-            check2(TokenType.FUN, TokenType.IDENTIFIER) -> function("function")
+            match(TokenType.CLASS) -> classDeclaration()
+            check2(TokenType.FUN, TokenType.IDENTIFIER) && match(TokenType.FUN) -> function("function")
             match(TokenType.VAR) -> varDeclaration()
             else -> statement()
         }
@@ -165,9 +166,22 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
         return Expression(expr)
     }
 
-    private fun function(kind: String): Function {
-        consume(TokenType.FUN, "Expect 'fun' when declaring function.")
+    private fun classDeclaration(): Stmt {
+        val name = consume(TokenType.IDENTIFIER, "Expect class name.")
 
+        consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
+
+        val methods = mutableListOf<Function>()
+        while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
+            methods.add(function("method"))
+        }
+
+        consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
+
+        return Class(name, methods)
+    }
+
+    private fun function(kind: String): Function {
         // kind for error reporting, telling between different kinds of functions, e.g. class methods too
         val name = consume(TokenType.IDENTIFIER, "Expect $kind name.")
 

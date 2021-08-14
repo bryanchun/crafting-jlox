@@ -2,6 +2,7 @@ package craftinglox.lox
 
 import craftinglox.lox.ast.*
 import craftinglox.lox.ast.Function
+import craftinglox.lox.ast.Set
 import craftinglox.lox.Class as LoxClass
 import craftinglox.lox.Function as LoxFunction
 import craftinglox.lox.Lambda as LoxLambda
@@ -287,6 +288,17 @@ class Interpreter(
         }
     }
 
+    override fun visitSetExpr(expr: Set): Any? {
+        when (val obj = evaluate(expr.`object`)) {
+            is Instance -> {
+                val value = evaluate(expr.value)
+                obj.set(expr.name, value)
+                return value
+            }
+            else -> throw RuntimeError(expr.name, "Only instances have fields.")
+        }
+    }
+
     override fun visitWhileStmt(stmt: While): Unit? {
         // re-evaluate the condition for its truthiness after each iteration of the side-effectful body
         while (isTruthy(evaluate(stmt.condition))) {
@@ -316,6 +328,14 @@ class Interpreter(
 
         return function.call(this, arguments)
     }
+
+    override fun visitGetExpr(expr: Get): Any? =
+        when (val obj = evaluate(expr.`object`)) {
+            // Optimization note: using a hash table for field access is fast enough, but there are other ways too.
+            is Instance -> obj.get(expr.name)
+            // Semantic choice: We could silently fail to return 'nil', but we don't do this here.
+            else -> throw RuntimeError(expr.name, "Only instances have properties.")
+        }
 
     override fun visitFunctionStmt(stmt: Function): Unit? {
         // Wraps the AST function into a runtime representation, ready to be invoked later on.

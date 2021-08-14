@@ -5,6 +5,7 @@ import craftinglox.lox.ast.Class
 import craftinglox.lox.ast.Function
 import craftinglox.lox.ast.Lambda
 import craftinglox.lox.ast.Return
+import craftinglox.lox.ast.Set
 
 /**
  * Semantic (static) analysis pass for resolving variable declarations
@@ -144,6 +145,15 @@ class Resolver(
         return null
     }
 
+    override fun visitGetExpr(expr: Get): Unit? {
+        resolve(expr.`object`)
+        // Property names are not resolved, since they are deferred to be resolved dynamically
+        // Semantic choice: Property dispatch is dynamic because property names are not processed in the
+        // static resolution pass.
+
+        return null
+    }
+
     override fun visitGroupingExpr(expr: Grouping): Unit? {
         resolve(expr.expression)
 
@@ -164,6 +174,14 @@ class Resolver(
     override fun visitLogicalExpr(expr: Logical): Unit? {
         resolve(expr.left)
         resolve(expr.right)
+
+        return null
+    }
+
+    override fun visitSetExpr(expr: Set): Unit? {
+        // Property names are not resolved, since they are deferred to be resolved dynamically
+        resolve(expr.value)
+        resolve(expr.`object`)
 
         return null
     }

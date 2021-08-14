@@ -2,10 +2,29 @@ package craftinglox.lox
 
 import craftinglox.lox.ast.*
 import craftinglox.lox.ast.Lambda
+import craftinglox.lox.ast.Set
 
 class PrettyPrinter: Expr.Visitor<String> {
 
     fun print(expr: Expr?) = expr?.accept(this)
+
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            val testExpression =
+                Binary(
+                    Unary(
+                        Token(TokenType.MINUS, "-", null, 1),
+                        Literal(123)
+                    ),
+                    Token(TokenType.STAR, "*", null, 1),
+                    Grouping(Literal(45.67))
+                )
+
+            val res = PrettyPrinter().print(testExpression)
+            println(res)    // (* (- 123) (group 45.67))
+        }
+    }
 
     private fun parenthesize(name: String, vararg exprs: Expr): String {
         // prefix printing for now
@@ -49,22 +68,11 @@ class PrettyPrinter: Expr.Visitor<String> {
         TODO("Not yet implemented")
     }
 
-    companion object {
+    override fun visitGetExpr(expr: Get): String {
+        TODO("Not yet implemented")
+    }
 
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val testExpression =
-                Binary(
-                    Unary(
-                        Token(TokenType.MINUS, "-", null, 1),
-                        Literal(123)
-                    ),
-                    Token(TokenType.STAR, "*", null, 1),
-                    Grouping(Literal(45.67))
-                )
-
-            val res = PrettyPrinter().print(testExpression)
-            println(res)    // (* (- 123) (group 45.67))
-        }
+    override fun visitSetExpr(expr: Set): String {
+        TODO("Not yet implemented")
     }
 }

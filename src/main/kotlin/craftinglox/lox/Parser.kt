@@ -212,6 +212,9 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
         return While(condition, body)
     }
 
+    /**
+     * Handle both expression assignment and set expression (property assignment)
+     */
     private fun assignment(): Expr {
         // l-value can be anything - if this is even an assignment expression
         val expr = or()
@@ -227,6 +230,8 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
                     // that qualifies as a valid "assignment target", e.g. Variable reference Expr
                     // Notice that we kept using single token lookahead with no backtracking to achieve this
                     is Variable -> Assign(name = expr.name, value = value)
+                    //
+                    is Get -> Set(expr.`object`, expr.name, value)
                     else -> {
                         error(equals, "Invalid assignment target.")
                         expr
@@ -282,14 +287,21 @@ class Parser(private val tokens: List<Token>, private val onError: (Token, Strin
             call()
         }
 
+    /**
+     * Handle both function call syntax and get expression (property access by dot operator)
+     */
     private fun call(): Expr {
         var expr = primary()
 
         // This loop deals with curried function calls.
         while (true) {
-            when {
+            expr = when {
                 match(TokenType.LEFT_PAREN) -> {
-                    expr = finishCall(expr)
+                    finishCall(expr)
+                }
+                match(TokenType.DOT) -> {
+                    val name = consume(TokenType.IDENTIFIER, "Expect property name after '.'.")
+                    Get(expr, name)
                 }
                 else -> break
             }

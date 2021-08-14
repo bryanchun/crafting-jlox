@@ -14,6 +14,8 @@ public abstract class Expr {
 
     public fun visitCallExpr(expr: Call): R
 
+    public fun visitGetExpr(expr: Get): R
+
     public fun visitGroupingExpr(expr: Grouping): R
 
     public fun visitLambdaExpr(expr: Lambda): R
@@ -21,6 +23,8 @@ public abstract class Expr {
     public fun visitLiteralExpr(expr: Literal): R
 
     public fun visitLogicalExpr(expr: Logical): R
+
+    public fun visitSetExpr(expr: Set): R
 
     public fun visitUnaryExpr(expr: Unary): R
 
@@ -54,6 +58,14 @@ public data class Call(
       visitor.visitCallExpr(this)
 }
 
+public data class Get(
+  public val `object`: Expr,
+  public val name: Token
+) : Expr() {
+  public override fun <R> accept(visitor: craftinglox.lox.ast.Expr.Visitor<R>): R =
+      visitor.visitGetExpr(this)
+}
+
 public data class Grouping(
   public val expression: Expr
 ) : Expr() {
@@ -83,6 +95,15 @@ public data class Logical(
 ) : Expr() {
   public override fun <R> accept(visitor: craftinglox.lox.ast.Expr.Visitor<R>): R =
       visitor.visitLogicalExpr(this)
+}
+
+public data class Set(
+  public val `object`: Expr,
+  public val name: Token,
+  public val `value`: Expr
+) : Expr() {
+  public override fun <R> accept(visitor: craftinglox.lox.ast.Expr.Visitor<R>): R =
+      visitor.visitSetExpr(this)
 }
 
 public data class Unary(

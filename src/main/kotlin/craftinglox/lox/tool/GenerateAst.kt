@@ -51,6 +51,10 @@ object GenerateAst {
                             "paren" to Token,
                             "arguments" to LIST.parameterizedBy(Expr),
                         ),
+                        "Get" to listOf(
+                            "object" to Expr,
+                            "name" to Token,
+                        ),
                         "Grouping" to listOf(
                             "expression" to Expr,
                         ),
@@ -65,6 +69,11 @@ object GenerateAst {
                             "left" to Expr,
                             "operator" to Token,
                             "right" to Expr,
+                        ),
+                        "Set" to listOf(
+                            "object" to Expr,
+                            "name" to Token,
+                            "value" to Expr,
                         ),
                         "Unary" to listOf(
                             "operator" to Token,

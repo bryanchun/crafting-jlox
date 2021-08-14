@@ -1,0 +1,18 @@
+class Person {
+  init() {
+    // return "me";
+
+    // if (42 == 57) {
+    //   return;
+    // }
+    // this.name = "Alice";
+
+    if (42 == 57) {
+      return this;
+    }
+    this.name = "Alice";
+  }
+}
+
+print Person();
+print Person().name;

@@ -37,7 +37,7 @@ class Resolver(
     private var currentFunction: FunctionType = FunctionType.NONE
     private var currentClass: ClassType = ClassType.NONE
 
-    enum class FunctionType { NONE, FUNCTION, METHOD }
+    enum class FunctionType { NONE, FUNCTION, INITIALIZER, METHOD }
     enum class ClassType { NONE, CLASS }
 
     // Core logic
@@ -58,7 +58,8 @@ class Resolver(
                 scopes.last()["this"] = true
 
                 stmt.methods.forEach {
-                    val declaration = FunctionType.METHOD
+                    val declaration =
+                        if (it.name.lexeme == "init") { FunctionType.INITIALIZER } else { FunctionType.METHOD }
                     resolveFunction(it, declaration)
                 }
             }
@@ -132,7 +133,17 @@ class Resolver(
             onError(stmt.keyword, "Can't return from top-level code.")
         }
 
-        stmt.value?.also { resolve(it) }
+        // Semantic choice: Allow class init method to return with `return this` only, no other allowed.
+        stmt.value?.also {
+            if (currentFunction == FunctionType.INITIALIZER && it !is This) {
+                onError(stmt.keyword, "Can't return a non-this value from an initializer.")
+            }
+            resolve(it)
+        } ?: also {
+            if (currentFunction == FunctionType.INITIALIZER) {
+                onError(stmt.keyword, "Can't return nothing from an initializer.")
+            }
+        }
 
         return null
     }

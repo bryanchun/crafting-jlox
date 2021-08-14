@@ -9,9 +9,15 @@ class Class(
     fun findMethod(name: String): Function? =
         methods.takeIf { it.containsKey(name) }?.get(name)
 
-    override fun arity(): Int = 0
+    override fun arity(): Int = findMethod("init")?.arity() ?: 0
 
-    override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? = Instance(this)
+    // Constructor
+    override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+        val instance = Instance(this)
+        val initializer = findMethod("init")
+        initializer?.bind(instance)?.call(interpreter, arguments)
+        return instance
+    }
 
     override fun toString(): String = name
 }

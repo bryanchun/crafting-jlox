@@ -4,13 +4,30 @@ import craftinglox.lox.ast.Function as AstFunction
 import craftinglox.lox.ast.Lambda as AstLambda
 
 // Function object representation
-class Function(
+class Function
+private constructor(
     private val declaration: AstFunction,
     private val closure: Environment,
-) : Callable by Lambda(
-    expr = AstLambda(declaration.params, declaration.body),
-    closure = closure,
-) {
+    private val isInitializer: Boolean,
+    private val lambda: Lambda,
+) : Callable by lambda {
+
+    // Public constructor
+    constructor(
+        declaration: AstFunction,
+        closure: Environment,
+        isInitializer: Boolean,
+    ): this(
+        declaration,
+        closure,
+        isInitializer,
+        Lambda(
+            expr = AstLambda(declaration.params, declaration.body),
+            closure = closure,
+        )
+    )
+
+
     // Bind the function with an instance through the 'this' variable and new wrapping closure
     // to return a bound method
     fun bind(instance: Instance): Function =
@@ -19,7 +36,19 @@ class Function(
             closure = Environment(closure).apply {
                 define("this", instance)
             },
+            isInitializer = isInitializer,
         )
+
+    override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
+        val result = lambda.call(interpreter, arguments)
+
+        // Semantic choice: class init methods always returns 'this'
+        return if (isInitializer) {
+            closure.getAt(0, "this")
+        } else {
+            result
+        }
+    }
 
     override fun toString(): String = "<fn ${declaration.name.lexeme}>"
 }

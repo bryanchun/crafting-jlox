@@ -265,7 +265,9 @@ class Interpreter(
 
         val methods = mutableMapOf<String, LoxFunction>()
         for (method in stmt.methods) {
-            methods[method.name.lexeme] = LoxFunction(method, environment)
+            methods[method.name.lexeme] = LoxFunction(
+                declaration = method, closure = environment, isInitializer = method.name.lexeme == "init",
+            )
         }
 
         val clazz = LoxClass(name = stmt.name.lexeme, methods = methods)
@@ -351,7 +353,7 @@ class Interpreter(
         // Wraps the AST function into a runtime representation, ready to be invoked later on.
         // Captures the current parent environment when declaring* the function, so that the closure environment
         // is preserved with the function object for later invocations. i.e. lexical scope not dynamic scope.
-        val function = LoxFunction(declaration = stmt, closure = environment)
+        val function = LoxFunction(declaration = stmt, closure = environment, isInitializer = false)
 
         // Bind/define the function object in the current environment
         environment.define(stmt.name.lexeme, function)
